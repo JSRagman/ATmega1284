@@ -138,3 +138,61 @@ f_twi_slaw:
     ret
 
 
+; f_twi_dataw
+; -----------------------------------------------------------------------------
+; Transmission Mode:
+;     Master Transmitter
+; Description:
+;     Transmits a data byte.
+; Parameters:
+;     r16 - must contain the byte to be transmitted.
+; General-Purpose Registers Used:
+;     1. Preserved - 
+;     2. Changed   - r16
+; I/O Registers Affected:
+;     TWCR - TWI Control Register (0xBC)
+;     TWDR - TWI Data Register    (0xBB)
+;     TWSR - TWI Status Register  (0xB9)
+f_twi_dataw:
+    sts TWDR, r16                      ; Load TWDR with data.
+    ldi  r16, (1<<TWINT)|(1<<TWEN)
+    sts TWCR, r16                      ; Clear TWINT, set TWEN.
+
+    twi_dataw_wait:                    ; Wait for TWINT.
+      lds  r16, TWCR
+      sbrs r16, TWINT
+      rjmp twi_dataw_wait
+
+    lds  r16, TWSR                     ; Read TWSR, mask out prescaler bits.
+    andi r16, 0xF8
+
+    ret
+
+
+; f_twi_stop
+; -----------------------------------------------------------------------------
+; Transmission Mode:
+;     Master Transmitter/Master Receiver
+; Description:
+;     Instructs the TWI to generate a STOP condition. Waits for the TWINT flag
+;     and then returns the TWI status code.
+; General-Purpose Registers Used:
+;     1. Preserved - 
+;     2. Changed   - r16
+; I/O Registers Affected:
+;     TWCR - TWI Control Register (0xBC)
+f_twi_stop:
+    ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
+    sts TWCR, r16                      ; TWCR: Clear TWINT, set TWSTO, set TWEN.
+
+    twi_stop_wait:                     ; Wait for TWINT.
+      lds  r16, TWCR
+      sbrs r16, TWINT
+      rjmp twi_stop_wait
+
+    lds  r16, TWSR                     ; Read TWSR, mask out prescaler bits.
+    andi r16, 0xF8
+
+    ret
+
+
