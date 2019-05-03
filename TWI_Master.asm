@@ -1,0 +1,68 @@
+;  TWI_Master.asm
+;
+;  Created: 5/3/2019
+;  Author: JSRagman
+;
+;  Description:
+;      Functions and definitions for the ATmega1284P MCU to operate as a TWI Master.
+;
+;  Constants:
+;      Uses constants defined in m1284pdef.inc.
+;      Additional constant definitions are inserted at the top of this file for clarity - normally I would keep them in a separate file.
+;
+;  Reference:
+;      1.  ATmega1284 datasheet (Atmel-8272G-AVR-01/2015)
+;      2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
+
+
+;  TWI Registers
+;  -------------
+
+;  TWCR - TWI Control Register (0xBC)
+;      Bit 7: TWINT    TWI Interrupt Flag
+;      Bit 6: TWEA     TWI Enable Ack Bit
+;      Bit 5: TWSTA    TWI START Condition Bit
+;      Bit 4: TWSTO    TWI STOP Condition Bit
+;      Bit 3: TWWC     TWI Write Collision Flag
+;      Bit 2: TWEN     TWI Enable Bit
+;      Bit 1:  -       Reserved
+;      Bit 0: TWIE     TWI Interrupt Enable
+;
+;  TWSR - TWI Status Register (0xB9)
+;      Bits 7:3:  TWS7:TWS3    TWI Status Code
+;      Bit  2:                 Reserved
+;      Bits 1:0   TWPS1:TWPS0  TWI Prescaler Bits
+
+
+.equ TWSR_PREMASK = 0xF8           ; TWSR Prescaler bits mask
+
+; TWSR: TWI Master Status Codes
+.equ TWISTAT_START      = 0x08
+.equ TWISTAT_REPSTART   = 0x10
+.equ TWISTAT_ARBLOST    = 0x38
+
+; Master Transmitter Status Codes
+.equ TWISTAT_SLAW_ACK   = 0x18
+.equ TWISTAT_SLAW_NACK  = 0x20
+.equ TWISTAT_DATAW_ACK  = 0x28
+.equ TWISTAT_DATAW_NACK = 0x30
+
+; Master Receiver Status Codes
+.equ TWISTAT_SLAR_ACK   = 0x40
+.equ TWISTAT_SLAR_NACK  = 0x48
+.equ TWISTAT_DATAR_ACK  = 0x50
+.equ TWISTAT_DATAR_NACK = 0x58
+
+
+;  Function List:
+;  -------------
+;    All Master Transmission Modes
+;        f_twi_start           Generates a TWI START condition and returns the
+;                              resulting status code
+;        f_twi_stop            Generates a STOP condition, returns status code
+;    Master Transmitter Mode
+;        f_twi_slaw            Transmits SLA+W, returns status code
+;        f_twi_dataw           Transmits a data byte, returns status code
+;    Master Receiver Mode
+
+
