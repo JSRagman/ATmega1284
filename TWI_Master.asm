@@ -75,6 +75,8 @@
 
 ; f_twi_start
 ; -----------------------------------------------------------------------------
+; Transmission Mode:
+;     Master Transmitter/Master Receiver
 ; Description:
 ;     Instructs the TWI to generate a START condition. Waits for the TWINT flag
 ;     and then returns the TWI status code.
@@ -85,12 +87,12 @@
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWSR - TWI Status Register  (0xB9)
 ; Returns:
-;     r16 - Returns the TWI status code in r16, masking out the prescaler bits.
+;     r16 - Returns the TWI status code in r16.
 f_twi_start:
     ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)
     sts TWCR, r16                 ; TWCR: Clear TWINT, set TWSTA, set TWEN.
 
-    twi_start_wait:               ; Read TWCR, wait until TWINT is set.
+    twi_start_wait:               ; Wait for TWINT.
       lds  r16, TWCR
       sbrs r16, TWINT
       rjmp twi_start_wait
@@ -100,5 +102,39 @@ f_twi_start:
 
     ret
 
+
+; f_twi_slaw
+; -----------------------------------------------------------------------------
+; Transmission Mode:
+;     Master Transmitter
+; Description:
+;     Transmits a TWI slave address and Write bit (SLA+W).
+; Parameters:
+;     r16 - must contain a TWI slave address to be transmitted. Bit 0 is the
+;           R/W bit, and should be cleared for a write operation.
+; General-Purpose Registers Used:
+;     1. Preserved - 
+;     2. Changed   - r16
+; I/O Registers Affected:
+;     TWCR - TWI Control Register (0xBC)
+;     TWDR - TWI Data Register    (0xBB)
+;     TWSR - TWI Status Register  (0xB9)
+; Returns:
+;     r16 - Returns the TWI status code in r16.
+f_twi_slaw:
+    cbr  r16, (1<<TWD0)                ; You can't be too careful.
+    sts TWDR, r16                      ; Load TWDR with SLA+W.
+    ldi  r16, (1<<TWINT)|(1<<TWEN)
+    sts TWCR, r16                      ; TWCR: Clear TWINT, set TWEN.
+
+    twi_slaw_wait:                     ; Wait for TWINT.
+      lds  r16, TWCR
+      sbrs r16, TWINT
+      rjmp twi_slaw_wait
+
+    lds  r16, TWSR                     ; Read TWSR, mask out prescaler bits.
+    andi r16, 0xF8
+
+    ret
 
 
