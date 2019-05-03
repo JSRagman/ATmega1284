@@ -69,7 +69,6 @@
 ;    Master Transmitter Mode
 ;        f_twi_slaw            Transmits SLA+W, returns status code
 ;        f_twi_dataw           Transmits a data byte, returns status code
-;    Master Receiver Mode
 
 
 
@@ -79,7 +78,7 @@
 ;     Master Transmitter/Master Receiver
 ; Description:
 ;     Instructs the TWI to generate a START condition. Waits for the TWINT flag
-;     and then returns the TWI status code.
+;     and then returns the TWSR status code.
 ; General-Purpose Registers Used:
 ;     1. Preserved - 
 ;     2. Changed   - r16
@@ -87,7 +86,7 @@
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWSR - TWI Status Register  (0xB9)
 ; Returns:
-;     r16 - Returns the TWI status code in r16.
+;     r16 - Returns the TWSR code in r16, masking out the prescaler bits.
 f_twi_start:
     ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)
     sts TWCR, r16                 ; TWCR: Clear TWINT, set TWSTA, set TWEN.
@@ -108,10 +107,11 @@ f_twi_start:
 ; Transmission Mode:
 ;     Master Transmitter
 ; Description:
-;     Transmits a TWI slave address and Write bit (SLA+W).
+;     Transmits a TWI slave address and Write bit (SLA+W). Waits for the TWINT flag
+;     and then returns the TWSR status code.
 ; Parameters:
-;     r16 - must contain a TWI slave address to be transmitted. Bit 0 is the
-;           R/W bit, and should be cleared for a write operation.
+;     r16 - must contain a TWI slave address. Bit 0 is the R/W bit, and should
+;           be cleared for a write operation.
 ; General-Purpose Registers Used:
 ;     1. Preserved - 
 ;     2. Changed   - r16
@@ -120,7 +120,7 @@ f_twi_start:
 ;     TWDR - TWI Data Register    (0xBB)
 ;     TWSR - TWI Status Register  (0xB9)
 ; Returns:
-;     r16 - Returns the TWI status code in r16.
+;     r16 - Returns the TWSR code in r16, masking out the prescaler bits.
 f_twi_slaw:
     cbr  r16, (1<<TWD0)                ; You can't be too careful.
     sts TWDR, r16                      ; Load TWDR with SLA+W.
@@ -143,7 +143,8 @@ f_twi_slaw:
 ; Transmission Mode:
 ;     Master Transmitter
 ; Description:
-;     Transmits a data byte.
+;     Transmits a data byte. Waits for the TWINT flag and then returns the TWSR
+;     status code.
 ; Parameters:
 ;     r16 - must contain the byte to be transmitted.
 ; General-Purpose Registers Used:
@@ -153,6 +154,8 @@ f_twi_slaw:
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWDR - TWI Data Register    (0xBB)
 ;     TWSR - TWI Status Register  (0xB9)
+; Returns:
+;     r16 - Returns the TWSR code in r16, masking out the prescaler bits.
 f_twi_dataw:
     sts TWDR, r16                      ; Load TWDR with data.
     ldi  r16, (1<<TWINT)|(1<<TWEN)
@@ -175,12 +178,14 @@ f_twi_dataw:
 ;     Master Transmitter/Master Receiver
 ; Description:
 ;     Instructs the TWI to generate a STOP condition. Waits for the TWINT flag
-;     and then returns the TWI status code.
+;     and then returns the TWSR status code.
 ; General-Purpose Registers Used:
 ;     1. Preserved - 
 ;     2. Changed   - r16
 ; I/O Registers Affected:
 ;     TWCR - TWI Control Register (0xBC)
+; Returns:
+;     r16 - Returns the TWSR code in r16, masking out the prescaler bits.
 f_twi_stop:
     ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
     sts TWCR, r16                      ; TWCR: Clear TWINT, set TWSTO, set TWEN.
