@@ -6,6 +6,12 @@
 ;  Description:
 ;      Functions and definitions for the ATmega1284P MCU to operate as a TWI Master.
 ;
+;  Notes on using the IN and OUT instructions:
+;     STS and LDS are used in many places (instead of OUT and IN) because TWI
+;     register addresses are greater than 0x3F.
+;     The ATmega1284 datasheet mistakenly uses OUT and IN in the example code.
+;     See the AVR Instruction Set documentation for OUT and IN.
+;
 ;  Constants:
 ;      Uses constants defined in m1284pdef.inc.
 ;      Additional constant definitions are inserted at the top of this file for clarity - normally I would keep them in a separate file.
@@ -64,5 +70,35 @@
 ;        f_twi_slaw            Transmits SLA+W, returns status code
 ;        f_twi_dataw           Transmits a data byte, returns status code
 ;    Master Receiver Mode
+
+
+
+; f_twi_start
+; -----------------------------------------------------------------------------
+; Description:
+;     Instructs the TWI to generate a START condition. Waits for the TWINT flag
+;     and then returns the TWI status code.
+; General-Purpose Registers Used:
+;     1. Preserved - 
+;     2. Changed   - r16
+; I/O Registers Affected:
+;     TWCR - TWI Control Register (0xBC)
+;     TWSR - TWI Status Register  (0xB9)
+; Returns:
+;     r16 - Returns the TWI status code in r16, masking out the prescaler bits.
+f_twi_start:
+    ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)
+    sts TWCR, r16                 ; TWCR: Clear TWINT, set TWSTA, set TWEN.
+
+    twi_start_wait:               ; Read TWCR, wait until TWINT is set.
+      lds  r16, TWCR
+      sbrs r16, TWINT
+      rjmp twi_start_wait
+
+    lds  r16, TWSR                ; Read TWSR into r16, mask out prescaler bits.
+    andi r16, 0xF8
+
+    ret
+
 
 
