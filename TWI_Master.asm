@@ -6,19 +6,20 @@
 ;  Description:
 ;      Functions and definitions for the ATmega1284P MCU to operate as a TWI Master.
 ;
+;  Constants:
+;      Uses constants defined in m1284pdef.inc.
+;      Additional constant definitions are inserted at the top of this file for
+;      clarity - normally I would keep them in a separate file.
+;
+;  Reference:
+;      1.  ATmega1284 datasheet (Atmel-8272G-AVR-01/2015)
+;      2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
+;
 ;  Notes on using the IN and OUT instructions:
 ;     STS and LDS are used in many places (instead of OUT and IN) because TWI
 ;     register addresses are greater than 0x3F.
 ;     The ATmega1284 datasheet mistakenly uses OUT and IN in the example code.
 ;     See the AVR Instruction Set documentation for OUT and IN.
-;
-;  Constants:
-;      Uses constants defined in m1284pdef.inc.
-;      Additional constant definitions are inserted at the top of this file for clarity - normally I would keep them in a separate file.
-;
-;  Reference:
-;      1.  ATmega1284 datasheet (Atmel-8272G-AVR-01/2015)
-;      2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
 
 
 ;  TWI Registers
@@ -84,11 +85,13 @@
 ; I/O Registers Affected:
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWSR - TWI Status Register  (0xB9)
+; Returns:
+;     TWSR - Caller should check the TWSR status bits on return.
 f_twi_start:
     ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)
-    sts TWCR, r16                 ; TWCR: Clear TWINT, set TWSTA, set TWEN.
+    sts TWCR, r16                 ; clear TWINT, set TWSTA, set TWEN.
 
-    twi_start_wait:               ; Wait for TWINT.
+    twi_start_wait:               ; wait for TWINT.
       lds  r16, TWCR
       sbrs r16, TWINT
       rjmp twi_start_wait
@@ -113,13 +116,15 @@ f_twi_start:
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWDR - TWI Data Register    (0xBB)
 ;     TWSR - TWI Status Register  (0xB9)
+; Returns:
+;     TWSR - Caller should check the TWSR status bits on return.
 f_twi_slaw:
     cbr  r16, (1<<TWD0)                ; You can't be too careful.
-    sts TWDR, r16                      ; Load TWDR with SLA+W.
+    sts TWDR, r16                      ; load TWDR with SLA+W.
     ldi  r16, (1<<TWINT)|(1<<TWEN)
-    sts TWCR, r16                      ; TWCR: Clear TWINT, set TWEN.
+    sts TWCR, r16                      ; clear TWINT, set TWEN.
 
-    twi_slaw_wait:                     ; Wait for TWINT.
+    twi_slaw_wait:                     ; wait for TWINT.
       lds  r16, TWCR
       sbrs r16, TWINT
       rjmp twi_slaw_wait
@@ -142,12 +147,14 @@ f_twi_slaw:
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWDR - TWI Data Register    (0xBB)
 ;     TWSR - TWI Status Register  (0xB9)
+; Returns:
+;     TWSR - Caller should check the TWSR status bits on return.
 f_twi_dataw:
-    sts TWDR, r16                      ; Load TWDR with data.
+    sts TWDR, r16                      ; load TWDR with data.
     ldi  r16, (1<<TWINT)|(1<<TWEN)
-    sts TWCR, r16                      ; Clear TWINT, set TWEN.
+    sts TWCR, r16                      ; clear TWINT, set TWEN.
 
-    twi_dataw_wait:                    ; Wait for TWINT.
+    twi_dataw_wait:                    ; wait for TWINT.
       lds  r16, TWCR
       sbrs r16, TWINT
       rjmp twi_dataw_wait
@@ -167,11 +174,13 @@ f_twi_dataw:
 ;     2. Changed   - r16
 ; I/O Registers Affected:
 ;     TWCR - TWI Control Register (0xBC)
+; Returns:
+;     TWSR - Caller should check the TWSR status bits on return.
 f_twi_stop:
     ldi  r16, (1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
-    sts TWCR, r16                      ; TWCR: Clear TWINT, set TWSTO, set TWEN.
+    sts TWCR, r16                      ; clear TWINT, set TWSTO, set TWEN.
 
-    twi_stop_wait:                     ; Wait for TWINT.
+    twi_stop_wait:                     ; wait for TWINT.
       lds  r16, TWCR
       sbrs r16, TWINT
       rjmp twi_stop_wait
