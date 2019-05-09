@@ -112,7 +112,7 @@ f_twi_start:
 ;     Note: r16 is used as a parameter here just for simplicity.
 ; General-Purpose Registers Used:
 ;     1. Preserved - 
-;     2. Changed   - r16, r29:r28(YH:YL)
+;     2. Changed   - r16
 ; I/O Registers Affected:
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWDR - TWI Data Register    (0xBB)
