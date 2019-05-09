@@ -66,8 +66,8 @@
 ;    All Master Transmission Modes
 ;        f_twi_start           Generates a TWI START condition
 ;        f_twi_stop            Generates a STOP condition
+;        f_twi_slawr           Transmits SLA+R/W
 ;    Master Transmitter Mode
-;        f_twi_slaw            Transmits SLA+W
 ;        f_twi_dataw           Transmits a data byte
 
 
