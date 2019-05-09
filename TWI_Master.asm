@@ -99,37 +99,38 @@ f_twi_start:
     ret
 
 
-; f_twi_slaw
+; f_twi_slawr
 ; -----------------------------------------------------------------------------
 ; Transmission Mode:
-;     Master Transmitter
+;     Master Transmitter(SLA+W)/Master Receiver(SLA+R)
 ; Description:
-;     Transmits a TWI slave address and Write bit (SLA+W). Waits for the TWINT flag
-;     and then returns.
+;     Transmits a TWI slave address and R/W bit (SLA+R/W). Waits for the
+;     TWINT flag and then returns.
 ; Parameters:
-;     r16 - must contain a TWI slave address. Bit 0 is the R/W bit, and should
-;           be cleared for a write operation.
+;     r16 - Must contain a one-byte SLA+R/W (7-bit TWI address followed
+;           by 1-bit R/W as bit 0).
+;     Note: r16 is used as a parameter here just for simplicity.
 ; General-Purpose Registers Used:
 ;     1. Preserved - 
-;     2. Changed   - r16
+;     2. Changed   - r16, r29:r28(YH:YL)
 ; I/O Registers Affected:
 ;     TWCR - TWI Control Register (0xBC)
 ;     TWDR - TWI Data Register    (0xBB)
 ;     TWSR - TWI Status Register  (0xB9)
 ; Returns:
 ;     TWSR - Caller should check the TWSR status bits on return.
-f_twi_slaw:
-    cbr  r16, (1<<TWD0)                ; You can't be too careful.
-    sts TWDR, r16                      ; load TWDR with SLA+W.
-    ldi  r16, (1<<TWINT)|(1<<TWEN)
-    sts TWCR, r16                      ; clear TWINT, set TWEN.
+f_twi_slawr:
+    sts TWDR, r16                      ; Load SLA+R/W into TWDR.
+    ldi  r16, (1<<TWINT)|(1<<TWEN)     ; clear TWINT, set TWEN
+    sts TWCR, r16                      ; transmit
 
-    twi_slaw_wait:                     ; wait for TWINT.
+    twi_slawr_wait:                     ; Wait for TWINT
       lds  r16, TWCR
       sbrs r16, TWINT
-      rjmp twi_slaw_wait
+      rjmp twi_slawr_wait
 
     ret
+
 
 
 ; f_twi_dataw
