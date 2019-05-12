@@ -10,13 +10,9 @@ Functions, Definitions, and Macros for the Atmel ATmega1284 MCU
 - atm1284pmain.asm
   - Interrupt table and common initialization chores
 ## Status
-Work in Progress... Functions are being added daily.
-
-Ok. Maybe not exactly daily. In my dad's memorable phraseology, I'm slower than the 7-year itch. If you are really anxious to see how it turns out, you might drop me a note.
+Work in Progress... Functions are being added ~~daily~~ ~~often~~ every now and then.
 
 Code in this repository has been handled with care but not tested. This message will change when testing is complete.
 
 ## Comments
-So, I says to myself "Hey, this code is ready to go". But the thought that somebody else just *might* see it causes me to give it another look over. Oh my. So, the code is not ready to go after all.
-
-It will be soon. Trust me on this.
+Regarding the use of macros; I use macros heavily when a project is getting started and pushed into shape. As the project matures, macros are gradually eliminated unless they provide a serious readability benefit.
