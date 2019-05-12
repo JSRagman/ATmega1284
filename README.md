@@ -3,6 +3,8 @@ Functions, Definitions, and Macros for the Atmel ATmega1284 MCU
 ## Files
 - atm1284pDataStackMacros.asm
   - Macros for implementing a data stack using the Y register
+- atm1284pDataXferMacros.asm
+  - Macros useful for moving bytes about
 - atm1284pTWIFuncs.asm
   - Functions and constants for TWI Master operation
 - atm1284pmain.asm
