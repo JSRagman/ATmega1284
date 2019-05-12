@@ -14,6 +14,10 @@
 ;     1.  ATmega1284 datasheet (Atmel-8272G-AVR-01/2015)
 ;     2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
 ;
+
+#ifndef _atm1284P_dstack_macro_defs_
+#define _atm1284P_dstack_macro_defs_
+
 ; Macro List:
 ;     m_peekd      Peeks the top byte on the data stack.
 ;     m_peekdd     Peeks one byte from a given displacement into the data stack.
@@ -117,3 +121,5 @@
     ldi r16, @0
     st -Y, r16
 .ENDMACRO
+
+#endif
