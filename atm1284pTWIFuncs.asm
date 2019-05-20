@@ -43,9 +43,6 @@
 ;          Bits 1:0   TWPS1:TWPS0  TWI Prescaler Bits
 
 
-#ifndef _atm1284P_twi_funcs_
-#define _atm1284P_twi_funcs_
-
 ; Register Usage:
 ;     Named Registers (global):
 ;         r_opstatus
@@ -58,51 +55,10 @@
 ;                  preserves the TWSR status bits at the time of the
 ;                  error, with the prescaler bits masked out.
 
-; TWCR Constants:
-.equ  TWCR_GO    = (1<<TWINT)|(1<<TWEN)
-.equ  TWCR_START = (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)
-.equ  TWCR_STOP  = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
 
 
-; TWI Operation Status Codes
-; --------------------------
-; Used with r_opstatus to localize TWI failure, when necessary.
-; These codes are assigned arbitrarily here, and have no meaning
-; outside this program.
-.equ TWIP_ERR   = 0b_1000_0000    ; Bit 7 is the Error flag.
-.equ TWIP_IDLE  = 0
-.equ TWIP_START = 0b_0000_0001
-.equ TWIP_SLAW  = 0b_0000_0010
-.equ TWIP_SLAR  = 0b_0000_0011
-.equ TWIP_TDATA = 0b_0000_0100
-.equ TWIP_RDATA = 0b_0000_0101
-.equ TWIP_STOP  = 0b_0000_0110
-
-
-
-; TWSR - Selected TWI Status Register Codes
-;        From reference 1, section 21.7
-; -------------------------------------
-; TWSR: Prescaler Bits Mask
-.equ TWSR_PREMASK   = 0b_1111_1000  ; Masks out TWSR prescaler bits.
-
-; TWSR: TWI Master Status Codes
-.equ TWSR_START     = 0x08   ; START has been transmitted.
-.equ TWSR_REPSTART  = 0x10   ; Repeated START has been transmitted.
-
-; TWSR: Master Transmitter Status Codes
-.equ TWSR_SLAWACK   = 0x18   ; SLA+W transmitted, ACK received.
-.equ TWSR_SLAWNACK  = 0x20   ; SLA+W transmitted, NACK received.
-.equ TWSR_DWACK     = 0x28   ; Data transmitted, ACK received.
-.equ TWSR_DWNACK    = 0x30   ; Data transmitted, NACK received.
-
-; TWSR: Master Receiver Status Codes
-.equ TWSR_SLARACK   = 0x40   ; SLA+R transmitted, ACK received.
-.equ TWSR_SLARNACK  = 0x48   ; SLA+R transmitted, NACK received.
-.equ TWSR_DRACK     = 0x50   ; Data byte received, ACK returned.
-.equ TWSR_DRNACK    = 0x58   ; Data byte received, NACK returned.
-
-
+#ifndef _atm1284P_twi_funcs_
+#define _atm1284P_twi_funcs_
 
 
 
@@ -234,8 +190,7 @@ f_twi_dw_csegdata:
 ;     r_opstatus - Bit 7 indicates success/failure (cleared/set).
 ;                  In case of failure, bits 6:0 indicate the process
 ;                  where the failure ocurred.
-;     GPIOR1     - In case of failure, GPIOR1 will contain the TWSR
-;                  Status bits from the offending process.
+;     r_result
 f_twi_dw_csegstring:
     in   r16, SREG
     push r16
@@ -321,8 +276,7 @@ f_twi_dw_csegstring:
 ;     r_opstatus - Bit 7 indicates success/failure (cleared/set).
 ;                  In case of failure, bits 6:0 indicate the process
 ;                  where the failure ocurred.
-;     GPIOR1     - In case of failure, GPIOR1 will contain the TWSR
-;                  Status bits from the offending process.
+
 f_twi_dw_stack:
     in   r16, SREG
     push r16
