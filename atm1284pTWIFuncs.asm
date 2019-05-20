@@ -70,12 +70,12 @@
 ;     SLA+W      - GPIOR0 is expected to hold the target TWI slave address
 ;                  plus a write bit.
 ;     Address(Z) - Z is expected to point to a program memory location that
-;                  contains the initialization data.
+;                  contains the data.
 ;     Byte Count - The low byte of the first data word (pointed to by Z)
 ;                  indicates the number of subsequent bytes to be read and
 ;                  transmitted.
 ;                  The high byte of the first word contains no data and
-;                  should be discarded.
+;                  is discarded.
 ; General-Purpose Registers:
 ;     Preserved - r17, r18, SREG
 ;     Changed   - r16, r19, Z
