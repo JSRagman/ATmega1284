@@ -143,6 +143,8 @@
 ;     r_opstatus - Bit 7 indicates success/failure (cleared/set).
 ;                  In case of failure, bits 6:0 indicate the process
 ;                  where the failure ocurred.
+;     r_result   - In case of failure, r_result will contain the
+;                  TWSR Status bits from the last operation performed.
 f_twi_dw_csegdata:
     in   r16, SREG
     push r16
@@ -229,8 +231,11 @@ f_twi_dw_csegdata:
 ;     f_twi_slawr
 ;     f_twint_wait
 ; Returns:
-;     r_opstatus
-;     r_result
+;     r_opstatus - Bit 7 indicates success/failure (cleared/set).
+;                  In case of failure, bits 6:0 indicate the process
+;                  where the failure ocurred.
+;     r_result   - In case of failure, r_result will contain the
+;                  TWSR Status bits from the last operation performed.
 f_twi_dw_csegstring:
     in   r16, SREG
     push r16
@@ -312,6 +317,12 @@ f_twi_dw_csegstring:
 ;     f_twint_wait
 ; Macros Used:
 ;     m_popd
+; Returns:
+;     r_opstatus - Bit 7 indicates success/failure (cleared/set).
+;                  In case of failure, bits 6:0 indicate the process
+;                  where the failure ocurred.
+;     r_result   - In case of failure, r_result will contain the
+;                  TWSR Status bits from the last operation performed.
 f_twi_dw_stack:
     in   r16, SREG
     push r16
