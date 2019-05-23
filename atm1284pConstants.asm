@@ -15,12 +15,12 @@
 
 ; Named Registers:
 ; -----------------------------------------------------------------------------
-.DEF  r_zero     = r0
 
-.DEF  r_result   = r19
-.DEF  r_opstatus = r20
+.DEF  r_opstat = r25
 
 
+; Named Register Bits
+.equ  OPSTAT_ERR = 7
 
 
 ; System Constants:
@@ -57,91 +57,77 @@
 .equ TWSR_DRNACK    = 0x58   ; Data byte received, NACK returned.
 
 
-; TWI Operation Status Codes
-; --------------------------
-; Used with r_opstatus to localize TWI failure, when necessary.
+; TWI Process Codes                                                   23May2019
+; -----------------------------------------------------------------------------
+; Used with r_opstat to localize TWI failure, when necessary.
 ; These codes are assigned arbitrarily here, and have no meaning
 ; outside this program.
-.equ TWIP_ERR   = 0b_1000_0000    ; Bit 7 is the Error flag.
 .equ TWIP_IDLE  = 0
 .equ TWIP_START = 0b_0000_0001
-.equ TWIP_SLAW  = 0b_0000_0010
-.equ TWIP_SLAR  = 0b_0000_0011
-.equ TWIP_TDATA = 0b_0000_0100
-.equ TWIP_RDATA = 0b_0000_0101
-.equ TWIP_STOP  = 0b_0000_0110
+.equ TWIP_SLARW = 0b_0000_0010
+.equ TWIP_TDATA = 0b_0000_0011
+.equ TWIP_RDATA = 0b_0000_0100
+.equ TWIP_STOP  = 0b_0000_0101
 
 
 
-; I/O Register Usage:
+; NHD-0420CW Display Constants:
 ; -----------------------------------------------------------------------------
-; GPIOR0
-;     For any TWI communication, GPIOR0 is expected to hold the TWI address of
-;     the targeted slave along with a R/W bit (SLA+R/W).
-; GPIOR1
-;     In the event of a TWI communication failure, GPIOR1 preserves the state
-;     of the TWI Status Register (TWSR) at the time of the failure.
+
+; Control Bytes
+.equ DISP_CMD   = 0x00  ; D/C# = 0, Control Byte - the next byte is a command.
+.equ DISP_DATA  = 0x40  ; D/C# = 1, Control Byte - the next byte is data.
+
+; Commands
+.equ DISP_OFF = 0x08
+.equ DISP_ON  = 0x0C
+
+.equ DISP_CLEAR     = 0x01
+.equ DISP_HOME      = 0x02
+.equ DISP_SET_DDRAM = 0x80
 
 
-; General-Purpose Register Usage:
+; Cursor State Constants
+.equ DISP_CURS_OFF   = 0
+.equ DISP_CURS_ON    = 0b_0000_0010
+.equ DISP_CURS_BLINK = 0b_0000_0011
+
+
+; Display Position Constants
+.equ DISP_LINE_1   = 0x00       ; DDRAM Line 1, Column 0
+.equ DISP_LINE_INC = 0x20       ; DDRAM Increment to next line
+.equ DISP_LINE_2   = 0x20       ; DDRAM Line 1, Column 0
+.equ DISP_LINE_3   = 0x40       ; DDRAM Line 1, Column 0
+.equ DISP_LINE_4   = 0x60       ; DDRAM Line 1, Column 0
+
+
+
+; Local Register Aliases:
 ; -----------------------------------------------------------------------------
-; r_Zero
-; r_opstatus
-;     f_twi_dw_csegdata
-;     f_twi_dw_csegstring
-;     f_twi_dw_stack
-; r_result
-;     f_twi_dw_csegdata
-;     f_twi_dw_csegstring
-;     f_twi_dw_stack
+;
+;   column      f_disp_setposition
+;   counter     f_twi_dw_csegdata
+;               f_twi_dw_stack
+;   data        f_twi_dw_byte
+;   expected    f_twi_slarw
+;   line        f_disp_setposition
+;   lineinc     f_disp_setposition
+;   position    f_disp_setposition
+;   result      f_twi_dw_byte
+;               f_twi_dw_csegdata
+;               f_twi_dw_csegstring
+;               f_twi_dw_stack
+;               f_twi_start
+;               f_twi_slarw
+;   slarw       f_twi_slarw
+;   slaw        f_twi_dw_byte
+;               f_twi_dw_csegdata
+;               f_twi_dw_csegstring
+;               f_twi_dw_stack
+;   twicmd      f_twi_dw_csegdata
+;               f_twi_dw_csegstring
+;               f_twi_dw_stack
 
-; r0 (r_zero)
-; r1
-; r2
-; r3
-; r4
-; r5
-; r6
-; r7
-; r8
-; r9
-; r10
-; r11
-; r12
-; r13
-; r14
-; r15
-
-; r16
-;     scratch
-; r17
-;     main
-;     f_twi_dw_csegdata
-;     f_twi_dw_csegstring
-;     f_twi_dw_stack
-; r18
-;     f_twi_dw_csegdata
-;     f_twi_dw_stack
-; r19 (r_result)
-; r20 (r_opstatus)
-; r21
-; r22
-; r23
-; r24
-; r25
-
-; X
-; Y
-;     main
-;     data stack macros
-;         m_peekd
-;         m_peekdd
-;         m_popd
-;         m_pushd
-;         m_pushdi
-; Z
-;     f_twi_dw_csegdata
-;     f_twi_dw_csegstring
 
 
 
