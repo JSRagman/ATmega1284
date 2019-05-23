@@ -401,7 +401,7 @@ f_twi_dw_csegstring:
 ;     2. If a connection cannot be established (START or SLA+W fail), all
 ;        incoming data will be popped from the data stack before returning.
 ;     3. The data transmission loop will exit when:
-;          a) Transmission is complete (bytecount is zero), or
+;          a) Transmission is complete (counter is zero), or
 ;          b) ACK is not received for any transmitted byte.
 f_twi_dw_stack:
     push r16
@@ -444,10 +444,10 @@ f_twi_dw_stack:
                                        ;   else
         sbr  r_opstat, (1<<OPSTAT_ERR) ;     set the OpStatus error bit
     twi_dw_stack_popoff:               ;     pop any leftover bytes
-        tst  counter                   ;     if (bytecount == 0)
+        tst  counter                   ;     if (counter == 0)
         breq twi_dw_stack_exit         ;       goto exit
         m_popd r16                     ;     pop one data byte
-        dec   counter                  ;     decrement bytecount
+        dec   counter                  ;     decrement counter
         rjmp  twi_dw_stack_popoff      ;     next byte
 
     twi_dw_stack_exit:
