@@ -19,6 +19,7 @@
 ; Depends On:
 ;     1.  m1284pdef.inc
 ;     2.  atm1284pConstants.asm
+;     3.  atm1284pDataStackMacros.asm
 ;
 ; Reference:
 ;     1.  ATmega1284 datasheet (Atmel-8272G-AVR-01/2015)
