@@ -1,5 +1,5 @@
 # ATmega1284
-Functions, Definitions, and Macros for the Atmel ATmega1284 MCU
+Functions, Definitions, and Macros for the Atmel ATmega1284 MCU. Also, basic functions and definitions for driving a Newhaven Display NHD-0420CW OLED Character Display module.
 ## Purpose
 If you see a function here that you like, take it, it's yours.
 
