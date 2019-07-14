@@ -244,6 +244,9 @@ US2066_SetState:
 ;     Tested 14Jul2019
 ; Description:
 ;     Transmits string data from EEPROM to the display.
+;
+;     The first byte of EEPROM data must be a Control Byte - Data (0x40).
+;
 ;     Transmission ends when an ASCII newline character ('\n') is encountered
 ;     or when the number of characters read reaches a specified count.
 ; Parameters:
