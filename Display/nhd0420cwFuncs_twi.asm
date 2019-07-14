@@ -247,12 +247,9 @@ US2066_SetState:
 ;     Transmission ends when an ASCII newline character ('\n') is encountered
 ;     or when the number of characters read reaches a specified count.
 ; Parameters:
+;     r25:r24    - EEPROM address of the first data byte.
 ;     SLA+W      - GPIOR0
 ;                  SLA+W for the targeted display.
-;     EEPROM     - Data Stack
-;                  The top byte on the data stack is expected to be the
-;                  low byte of the EEPROM address where the string data
-;                  is to be found.
 ;     Max Bytes  - Data Stack
 ;                  The second byte on the data stack indicates the maximum
 ;                  number of bytes that can be transmitted.
