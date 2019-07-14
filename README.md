@@ -11,5 +11,6 @@ This is not really meant to be an installable software package, even though all 
 - The test circuit has been built
 - TWI functions have been tested
 - Display functions have been tested
+- Refinements are ongoing
 ## Comments
 - Deep breath. Count to 8.
