@@ -10,3 +10,7 @@ Constant definitions for the TWI functions
 - TwiConnect
 - TwiStop
 - TwiWait
+### TwiFuncs_Write.asm
+- TwiDw_FromDataStack
+- TwiDw_FromEepData
+- TwiDw_FromEepString
