@@ -22,7 +22,6 @@
 ;     US2066_SetPosition          Sets the display line and column positions.
 ;     US2066_SetState             Turns the display on or off and sets the cursor state.
 ;     US2066_WriteFromEepString   Transmits string data from EEPROM to the display.
-;     US2066_WriteFromEepData     Reads data from EEPROM and transmits to the display.
 
 
 #ifndef _us2066_dispfuncs_twi
@@ -31,56 +30,52 @@
 
 
 
-; US2066_Reset                                                        14Jul2019
+; US2066_Reset                                                        15Jul2019
 ; -----------------------------------------------------------------------------
 ; Status:
-;     Tested 14Jul2019
+;     Tested  15Jul2019
 ; Description:
 ;     Resets and initializes the display.
-;
-;     Initialization data must be organized in byte pairs:
-;         control byte, command(or data) byte,
-;         control byte, command(or data) byte,
-;         control byte, command(or data) byte,
-;         ...
-;
-;     The display I2C interface expects to receive a control byte followd by
-;     a command(or data) byte.
-;
-;     There are only two recognized control bytes - 0x00 and 0x40.
-;     Transmission ends when a byte that is expected to be a control byte,
-;     is not a control byte.
 ; Parameters:
-;     Address - r25:r24
-;               r25:r24 are expected to hold the EEPROM address of the
-;               initialization data.
-;     SLA+W   - GPIOR0
-;               GPIOR0 is expected to hold the SLA+W for the targeted display.
+;     Address - display_init
+;               The display_init label is expected to be the EEPROM
+;               address of the initialization data.
+;     SLA+W   - Global Constant
+;               DISPLAY_ADDR is expected to hold the SLA+W for the display.
 ; General-Purpose Registers:
 ;     Preserved - 
 ;     Changed   - r16
 ; I/O Registers Affected:
 ;     DDRD - The DRESET pin direction is set to Output and then back to Input.
 US2066_Reset:
+    push   r24
+    push   r25
+
     sbi    DDRD, DRESET
     m_delay 100
-
     cbi    DDRD, DRESET
     m_delay 100
 
-    rcall  US2066_WriteFromEepData
+    ldi    r25,    high(display_init)   ; Point to initialization data.
+    ldi    r24,     low(display_init)
+    pushdi DISPLAY_ADDR
+
+    rcall  TwiDw_FromEepData
+
+    pop    r25
+    pop    r24
     ret
 
 
-; US2066_SendCommand                                                  12Jul2019
+; US2066_SendCommand                                                  15Jul2019
 ; -----------------------------------------------------------------------------
 ; Status:
-;     Tested  12Jul2019
+;     Tested  15Jul2019
 ; Description:
 ;     Sends a single-byte command to the display.
 ; Parameters:
-;     SLA+W   - GPIOR0
-;               GPIOR0 is expected to hold the SLA+W for the targeted display.
+;     SLA+W   - Global Constant
+;               DISPLAY_ADDR is expected to hold the SLA+W for the display.
 ;     Command - Data Stack
 ;               The top byte of the data stack is expected to be a command.
 ; General-Purpose Registers:
@@ -93,10 +88,10 @@ US2066_Reset:
 ;     Push 1 byte   = SLA+W
 ; Constants (Non-Standard):
 ;     CTRLBYTE_CMD
+;     DISPLAY_ADDR
 ; Functions Called:
 ;     TwiDw_FromDataStack
 ; Macros Used:
-;     pushd  - Push the contents of a register onto the data stack
 ;     pushdi - Pushes an immediate value onto the data stack
 ; Returns:
 ;     Return values are passed unchanged from the TwiDw_FromDataStack function.
@@ -104,33 +99,32 @@ US2066_Reset:
 ;            (cleared) or if an error was encountered (set)
 ;     TWSR - Will contain a status code from the last TWI operation performed
 US2066_SendCommand:
-    push  r16
+    push     r16
 
-    pushdi CTRLBYTE_CMD                ; Data Stack: push control byte
-    pushdi 2                           ; Data Stack: push bytecount
-    in     r16,    GPIOR0              ; Retrieve the display SLA+W
-    pushd  r16                         ; Data Stack: push SLA+W
-    rcall  TwiDw_FromDataStack         ; Transmit
+    pushdi   CTRLBYTE_CMD                   ; Data Stack: push control byte
+    pushdi   2                              ; Data Stack: push bytecount
+    pushdi   DISPLAY_ADDR                   ; Data Stack: push SLA+W
+    rcall    TwiDw_FromDataStack            ; Transmit
 
-    pop    r16
+    pop      r16
     ret
 
 
-; US2066_SendData                                                     12Jul2019
+; US2066_SendData                                                     15Jul2019
 ; -----------------------------------------------------------------------------
 ; Status:
-;     Tested  12Jul2019
+;     Tested  15Jul2019
 ; Description:
 ;     Sends one or more bytes of data to the display.
 ; Parameters:
-;     SLA+W      - GPIOR0
-;                  GPIOR0 is expected to hold the SLA+W for the targeted display.
-;     Byte Count - Data Stack
-;                  The top byte of the data stack is expected to indicate the
-;                  number of data bytes that follow.
-;     Data       - Data Stack
-;                  Below the byte count, the data stack is expected to contain
-;                  one or more bytes of data.
+;     SLA+W  - Global Constant
+;              DISPLAY_ADDR is expected to hold the SLA+W for the display.
+;     Count  - Data Stack
+;              The top byte of the data stack is expected to indicate the
+;              number of data bytes that follow.
+;     Data   - Data Stack
+;              Below the byte count, the data stack is expected to contain
+;              one or more bytes of data.
 ; General-Purpose Registers:
 ;     Preserved - r16, r17
 ;     Changed   - 
@@ -142,11 +136,12 @@ US2066_SendCommand:
 ;     Push 1 byte   = SLA+W
 ; Constants (Non-Standard):
 ;     CTRLBYTE_DATA
+;     DISPLAY_ADDR
 ; Functions Called:
 ;     TwiDw_FromDataStack
 ; Macros Used:
-;     popd  - Pop from the data stack into a specified register
-;     pushd - Push the contents of a register onto the data stack
+;     popd   - Pop from the data stack into a register
+;     pushd  - Push the contents of a register onto the data stack
 ;     pushdi - Pushes an immediate value onto the data stack
 ; Returns:
 ;     SREG - The T flag indicates whether the operation was successful
@@ -155,17 +150,16 @@ US2066_SendData:
     push r16
     push r17
 
-   .def    bytecount = r17
+   .def     count = r17
 
-    popd    bytecount                         ; Data Stack: pop bytecount
-    inc     bytecount                         ; increment bytecount
-    pushdi  CTRLBYTE_DATA                     ; Data Stack: push Control Byte - Data
-    pushd   bytecount                         ; Data Stack: push incremented bytecount
-    in      r16,    GPIOR0                    ; Retrieve the display SLA+W
-    pushd   r16                               ; Data Stack: push SLA+W
-    rcall   TwiDw_FromDataStack               ; Transmit
+    popd    count                           ; Data Stack: pop bytecount
+    inc     count                           ; increment bytecount
+    pushdi  CTRLBYTE_DATA                   ; Data Stack: push Control Byte - Data
+    pushd   count                           ; Data Stack: push incremented bytecount
+    pushdi  DISPLAY_ADDR                    ; Data Stack: push SLA+W
+    rcall   TwiDw_FromDataStack             ; Transmit
 
-   .undef  bytecount
+   .undef   count
 
     pop    r17
     pop    r16
@@ -179,8 +173,8 @@ US2066_SendData:
 ; Description:
 ;     Sets the display line and column positions.
 ; Parameters:
-;     SLA+W  - GPIOR0
-;              GPIOR0 is expected to hold the SLA+W for the targeted display.
+;     SLA+W  - Global Constant
+;              DISPLAY_ADDR is expected to hold the SLA+W for the display.
 ;     Line   - Data Stack
 ;              The top byte on the data stack is expected to indicate
 ;              the line number (1, 2, 3, or 4).
@@ -188,7 +182,7 @@ US2066_SendData:
 ;              The second byte on the data stack is expected to indicate
 ;              the column number (1 to 20).
 ; General-Purpose Registers:
-;     Preserved - r16, r17, r18, r19, r20, r21
+;     Preserved - r0, r16, r17, r18, r19, r20, r21
 ;     Changed   - 
 ; Data Stack:
 ;     Incoming     = 2 bytes
@@ -200,6 +194,7 @@ US2066_SendData:
 ;     Push 1 byte  = SLA+W
 ; Constants (Non-Standard):
 ;     CTRLBYTE_CMD
+;     DISPLAY_ADDR
 ;     LINE_INCREMENT
 ;     SET_DDRAM
 ; Functions Called:
@@ -213,66 +208,63 @@ US2066_SendData:
 ;     SREG - The T flag indicates whether the TWI operation was successful
 ;            (cleared) or if an error was encountered (set)
 ; Notes:
-;     1. Command Byte - Set DDRAM Address
+;     1. The Set DDRAM Address command has the format:
 ;          Bit    7 = 1
 ;          Bits 6:0 = DDRAM address value
 US2066_SetPosition:
-    push   r16
-    push   r17
-    push   r18
-    push   r19
-    push   r20
-    push   r21
+    push    r0
+    push    r16
+    push    r17
+    push    r18
+    push    r19
+    push    r20
 
-   .def    line    = r17                    ; Line number
-   .def    column  = r18                    ; Column number
-   .def    ddram   = r19                    ; Display position (DDRAM address)
-   .def    sla_w   = r20                    ; SLA+W parameter
-   .def    lineinc = r21                    ; DDRAM line increment value
+   .def     line    = r17                   ; Line number
+   .def     column  = r18                   ; Column number
+   .def     ddram   = r19                   ; Display position (DDRAM address)
+   .def     lineinc = r20                   ; DDRAM line increment value
 
-    in     sla_w,   GPIOR0                  ; retrieve SLA+W for the display
-    ldi    lineinc, LINE_INCREMENT          ; load ddram line increment value
+    ldi     lineinc, LINE_INCREMENT         ; load ddram line increment value
 
-    popd   line                             ; Data Stack: pop line number
-    dec    line                             ; decrement linenumber
-    mul    line, lineinc                    ; ddram = linenumber * increment
-    mov    ddram, r0
+    popd    line                            ; Data Stack: pop line number
+    dec     line                            ; decrement linenumber
+    mul     line, lineinc                   ; ddram = linenumber * increment
+    mov     ddram, r0
 
-    popd   column                           ; Data Stack: pop column number
-    dec    column                           ; decrement column number
-    add    ddram, column                    ; ddram += column number
-    ori    ddram, SET_DDRAM                 ; Complete the Set DDRAM command
+    popd    column                          ; Data Stack: pop column number
+    dec     column                          ; decrement column number
+    add     ddram, column                   ; ddram += column number
+    ori     ddram, SET_DDRAM                ; Complete the Set DDRAM command
 
-    pushd  ddram                            ; Data Stack: push ddram command
-    pushdi CTRLBYTE_CMD                     ; Data Stack: push control byte
-    pushdi 2                                ; Data Stack: push bytecount
-    pushd  sla_w                            ; Data Stack: push SLA+W
-    rcall  TwiDw_FromDataStack              ; TWI transmit
+    pushd   ddram                           ; Data Stack: push ddram command
+    pushdi  CTRLBYTE_CMD                    ; Data Stack: push control byte
+    pushdi  2                               ; Data Stack: push bytecount
+    pushdi  DISPLAY_ADDR                    ; Data Stack: push SLA+W
+    rcall   TwiDw_FromDataStack             ; Transmit
 
-   .undef  lineinc
-   .undef  sla_w
-   .undef  ddram
-   .undef  column
-   .undef  line
+   .undef   lineinc
+   .undef   ddram
+   .undef   column
+   .undef   line
 
-    pop    r21
-    pop    r20
-    pop    r19
-    pop    r18
-    pop    r17
-    pop    r16
+    pop     r20
+    pop     r19
+    pop     r18
+    pop     r17
+    pop     r16
+    pop     r0
     ret
 
 
-; US2066_SetState                                                     12Jul2019
+; US2066_SetState                                                     15Jul2019
 ; -----------------------------------------------------------------------------
 ; Status:
-;     Tested  12Jul2019
+;     Tested  15Jul2019
 ; Description:
 ;     Turns the display on or off and sets the cursor state.
 ; Parameters:
-;     SLA+W  - GPIOR0
-;              GPIOR0 is expected to hold the SLA+W for the targeted display.
+;     SLA+W  - Global Constant
+;              DISPLAY_ADDR is expected to hold the SLA+W for the display.
 ;     State  - Data Stack
 ;              The top byte on the data stack is expected to be a command
 ;              byte to turn the display on or off.
@@ -292,49 +284,47 @@ US2066_SetPosition:
 ;     Push 1 byte  = SLA+W
 ; Constants (Non-Standard):
 ;     CTRLBYTE_CMD
+;     DISPLAY_ADDR
 ; Functions Called:
 ;     TwiDw_FromDataStack
 ; Macros Used:
-;     popd  - Pop from the data stack into a specified register
-;     pushd - Push the contents of a register onto the data stack
+;     popd   - Pop from the data stack into a register
+;     pushd  - Push the contents of a register onto the data stack
+;     pushdi - Push an immediate value onto the data stack
 ; Returns:
 ;     Return values are passed unchanged from the TwiDw_FromDataStack function.
 ;     SREG - The T flag indicates whether the TWI operation was successful
 ;            (cleared) or if an error was encountered (set)
-;     TWSR - Will contain a status code from the last TWI operation performed
 US2066_SetState:
-    push   r16
-    push   r17
-    push   r18
+    push    r16
+    push    r17
+    push    r18
 
-   .def    displaystate = r17
-   .def    cursorstate  = r18
+   .def     displaystate = r17
+   .def     cursorstate  = r18
 
-    popd   displaystate                     ; Data Stack: pop display state
-    popd   cursorstate                      ; Data Stack: pop cursor state
-    or     displaystate, cursorstate        ; displaystate |= cursorstate
-    pushd  displaystate                     ; Data Stack: push displaystate
-    ldi    r16,    CTRLBYTE_CMD
-    pushd  r16                              ; Data Stack: push control byte
-    ldi    r16,    2                        ; bytecount = 2
-    pushd  r16                              ; Data Stack: push bytecount
-    in     r16,    GPIOR0
-    pushd  r16                              ; Data Stack: push SLA+W
-    rcall  TwiDw_FromDataStack              ; TWI transmit
+    popd    displaystate                    ; Data Stack: pop display state
+    popd    cursorstate                     ; Data Stack: pop cursor state
+    or      displaystate, cursorstate       ; displaystate |= cursorstate
+    pushd   displaystate                    ; Data Stack: push displaystate
+    pushdi  CTRLBYTE_CMD                    ; Data Stack: push control byte
+    pushdi  2                               ; Data Stack: push bytecount
+    pushdi  DISPLAY_ADDR                    ; Data Stack: push SLA+W
+    rcall   TwiDw_FromDataStack             ; Transmit
 
-   .undef  cursorstate
-   .undef  displaystate
+   .undef   cursorstate
+   .undef   displaystate
 
-    pop    r18
-    pop    r17
-    pop    r16
+    pop     r18
+    pop     r17
+    pop     r16
     ret
 
 
-; US2066_WriteFromEepString                                           14Jul2019
+; US2066_WriteFromEepString                                           15Jul2019
 ; -----------------------------------------------------------------------------
 ; Status:
-;     Tested 14Jul2019
+;     Tested  15Jul2019
 ; Description:
 ;     Transmits string data from EEPROM to the display.
 ;
@@ -344,137 +334,34 @@ US2066_SetState:
 ;     or when the number of characters read reaches a specified count.
 ; Parameters:
 ;     r25:r24    - EEPROM address of the first data byte.
-;     SLA+W      - GPIOR0
-;                  SLA+W for the targeted display.
+;     SLA+W      - Global Constant
+;                  DISPLAY_ADDR is expected to hold the SLA+W for the display.
 ;     Max Bytes  - Data Stack
-;                  The second byte on the data stack indicates the maximum
+;                  The top byte on the data stack indicates the maximum
 ;                  number of bytes that can be transmitted.
 ;                  This will terminate the loop in the event that the
 ;                  EEPROM string data does not contain a newline character.
 ; General-Purpose Registers:
-;     Preserved - 
+;     Preserved - r16
 ;     Changed   - 
 ; Data Stack:
-;     Incoming    1 byte EEPROM address (low byte)
-;                 1 byte maximum byte count
+;     Incoming    1 byte maximum byte count
 ;     Final     - empty
+; Constants (Non-Standard):
+;     DISPLAY_ADDR
 ; Functions Called:
 ;     TwiDw_FromEepString
 ; Macros Used:
-;     popd  - Pop from the data stack
-;     pushd - Push to the data stack
+;     pushdi - Push an immediate value onto the data stack
 ; Returns:
 ;     SREG - The T flag indicates whether the operation was successful
 ;            (cleared) or if an error was encountered (set)
 US2066_WriteFromEepString:
-   push   r16
-   push   r17
-   push   r18
-
-   in      r16,    GPIOR0                   ; load SLA+W for the targeted display
-   pushd   r16                              ; push SLA+W
-
-   rcall   TwiDw_FromEepString              ; TWI transmit
-
-   pop    r18
-   pop    r17
-   pop    r16
-   ret
-
-
-; US2066_WriteFromEepData                                             14Jul2019
-; -----------------------------------------------------------------------------
-; Status:
-;     Tested 14Jul2019
-; Description:
-;     Reads data from EEPROM and transmits to the display.
-;
-;     EEPROM data must be organized in byte pairs:
-;         control byte, command(or data) byte,
-;         control byte, command(or data) byte,
-;         control byte, command(or data) byte,
-;         ...
-;
-;     The display I2C interface expects to receive a control byte followd by
-;     a command(or data) byte.
-;
-;     There are only two recognized control bytes - 0x00 and 0x40.
-;     Transmission ends when a byte that is expected to be a control byte,
-;     is not a control byte.
-; Parameters:
-;     Address - r25:r24
-;               r25:r24 are expected to hold the EEPROM address of the first
-;               control byte.
-;     SLA+W   - GPIOR0
-;               GPIOR0 is expected to hold the SLA+W for the targeted display.
-; General-Purpose Registers:
-;     Preserved - r16, r17, r18, r20
-;     Changed   - r25:r24
-; Data Stack:
-;     Incoming  - empty
-;     Final     - empty
-; I/O Registers Affected:
-;     SREG        - T flag is used to report function success/failure
-;     EEARH:EEARL - EEPROM Address Registers
-;     EECR        - EEPROM Control Register
-; Constants (Non-Standard):
-;     CTRLBYTE_MASK
-; Functions Called:
-;     TwiDw_FromDataStack
-; Macros Used:
-;     pushd  - Pushes the contents of a register onto the data stack
-;     pushdi - Pushes an immediate value onto the data stack
-; Returns:
-;     SREG - The T flag indicates whether the operation was successful
-;            (cleared) or if an error was encounted (set)
-; Notes:
-;     1.  A control byte will be either 0x00 or 0x40.
-;         Any control byte ANDed with 0b_1011_1111 will yield a zero.
-;
-US2066_WriteFromEepData:
     push   r16
-    push   r17
-    push   r18
-    push   r20
 
-   .def    ctrlbyt = r17                    ; control byte
-   .def    databyt = r18                    ; data(or command) byte
-   .def    sla_w   = r20                    ; SLA+W parameter
+    pushdi  DISPLAY_ADDR                    ; Data Stack: push SLA+W
+    rcall   TwiDw_FromEepString             ; Transmit
 
-    in     sla_w,  GPIOR0                   ; retrieve the display address
-loop_WriteFromEepData:
-    out    EEARH,    r25                    ; Load EEPROM address
-    out    EEARL,    r24
-    sbi    EECR,     EERE                   ; Read the first byte
-    in     ctrlbyt,  EEDR                   ; and place in ctrlbyt
-    adiw   r25:r24, 1                       ; Increment the EEPROM address.
-
-    ldi    r16,    CTRLBYTE_MASK            ; Test for control byte
-    and    r16,    ctrlbyt                  ; if (ctrlbyte != control byte)
-    brne   exit_WriteFromEepData            ;     exit
-
-    out    EEARH,    r25                    ; Load EEPROM address
-    out    EEARL,    r24
-    sbi    EECR,     EERE                   ; Read the data byte
-    in     databyt,  EEDR                   ; and place in databyt
-    adiw   r25:r24, 1                       ; Increment the EEPROM address.
-
-    pushd  databyt                          ; push the data byte
-    pushd  ctrlbyt                          ; push the control byte
-    pushdi 2                                ; push the byte count
-    pushd  sla_w                            ; push the display address
-    rcall  TwiDw_FromDataStack              ; Transmit
-    brtc   loop_WriteFromEepData
-
-exit_WriteFromEepData:
-
-   .undef  sla_w
-   .undef  databyt
-   .undef  ctrlbyt
-
-    pop    r20
-    pop    r18
-    pop    r17
     pop    r16
     ret
 
