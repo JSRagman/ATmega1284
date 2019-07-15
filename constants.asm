@@ -3,7 +3,7 @@
 ;
 ; File:    constants.asm
 ; Created: 29Jun2019
-; Updated: 14Jul2019
+; Updated: 15Jul2019
 ; Author:  JSRagman
 ; 
 
@@ -92,36 +92,36 @@
 
 ; CPU Clock           = 8 MHz
 ; TWSR Prescaler bits = 0
-.EQU  TWBR_100KHz = 34
+.equ  TWBR_100KHz = 34
 .equ  TWBR_400KHz =  2
 
 
 ; TWCR Constants
-.EQU  TWCR_GO    = (1<<TWINT)|(1<<TWEN)               ; set TWEN, clear TWINT
-.EQU  TWCR_START = (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)    ; generate START
-.EQU  TWCR_STOP  = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO)    ; generate STOP
+.equ  TWCR_GO    = (1<<TWINT)|(1<<TWEN)               ; set TWEN, clear TWINT
+.equ  TWCR_START = (1<<TWINT)|(1<<TWEN)|(1<<TWSTA)    ; generate START
+.equ  TWCR_STOP  = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO)    ; generate STOP
 
 
 ; TWSR Constants
 
 ; TWSR: Prescaler Bits Mask
-.EQU  TWISTAT_PREMASK   = 0b_1111_1000    ; Masks out TWSR prescaler bits.
+.equ  TWISTAT_PREMASK   = 0b_1111_1000    ; Masks out TWSR prescaler bits.
 
 ; TWSR: TWI Master Status Codes
-.EQU  TWISTAT_START     = 0x08            ; START has been transmitted.
-.EQU  TWISTAT_REPSTART  = 0x10            ; Repeated START has been transmitted.
+.equ  TWISTAT_START     = 0x08            ; START has been transmitted.
+.equ  TWISTAT_REPSTART  = 0x10            ; Repeated START has been transmitted.
 
 ; TWSR: Master Transmitter Status Codes
-.EQU  TWISTAT_SLAW_ACK   = 0x18           ; SLA+W transmitted, ACK received.
-.EQU  TWISTAT_SLAW_NACK  = 0x20           ; SLA+W transmitted, NACK received.
-.EQU  TWISTAT_DW_ACK     = 0x28           ; Data transmitted, ACK received.
-.EQU  TWISTAT_DW_NACK    = 0x30           ; Data transmitted, NACK received.
+.equ  TWISTAT_SLAW_ACK   = 0x18           ; SLA+W transmitted, ACK received.
+.equ  TWISTAT_SLAW_NACK  = 0x20           ; SLA+W transmitted, NACK received.
+.equ  TWISTAT_DW_ACK     = 0x28           ; Data transmitted, ACK received.
+.equ  TWISTAT_DW_NACK    = 0x30           ; Data transmitted, NACK received.
 
 ; TWSR: Master Receiver Status Codes
-.EQU  TWISTAT_SLAR_ACK   = 0x40           ; SLA+R transmitted, ACK received.
-.EQU  TWISTAT_SLAR_NACK  = 0x48           ; SLA+R transmitted, NACK received.
-.EQU  TWISTAT_DR_ACK     = 0x50           ; Data byte received, ACK returned.
-.EQU  TWISTAT_DR_NACK    = 0x58           ; Data byte received, NACK returned.
+.equ  TWISTAT_SLAR_ACK   = 0x40           ; SLA+R transmitted, ACK received.
+.equ  TWISTAT_SLAR_NACK  = 0x48           ; SLA+R transmitted, NACK received.
+.equ  TWISTAT_DR_ACK     = 0x50           ; Data byte received, ACK returned.
+.equ  TWISTAT_DR_NACK    = 0x58           ; Data byte received, NACK returned.
 
 
 ; NHD-0420CW Display Constants:
@@ -135,24 +135,25 @@
 .equ CTRLBYTE_MASK  = 0b_1011_1111
 
 ; Commands
-.equ DISPLAY_CLEAR  = 0x01
-.equ DISPLAY_HOME   = 0x02
-.equ DISPLAY_OFF    = 0x08
-.equ DISPLAY_ON     = 0x0C
+.equ DISPLAY_CLEAR = 0x01
+.equ DISPLAY_HOME  = 0x02
+.equ DISPLAY_OFF   = 0x08
+.equ DISPLAY_ON    = 0x0C
 
-.equ SET_DDRAM = 0x80  ; 0b_1000_0000
+.equ SET_DDRAM     = 0x80
+
 
 ; Cursor State Constants
-.equ CURSOR_OFF   = 0
-.equ CURSOR_ON    = 0b_0000_0010
-.equ CURSOR_BLINK = 0b_0000_0011
+.equ CURSOR_OFF    = 0
+.equ CURSOR_ON     = 0b_0000_0010
+.equ CURSOR_BLINK  = 0b_0000_0011
 
 ; Display Position Constants
-.equ DISPLAY_LINE_1   = 0x00       ; DDRAM Line 1, Column 0
-.equ DISPLAY_LINE_INC = 0x20       ; DDRAM Increment to next line
-.equ DISPLAY_LINE_2   = 0x20       ; DDRAM Line 1, Column 0
-.equ DISPLAY_LINE_3   = 0x40       ; DDRAM Line 1, Column 0
-.equ DISPLAY_LINE_4   = 0x60       ; DDRAM Line 1, Column 0
+.equ LINE_INCREMENT = 0x20       ; DDRAM Increment from one line to the next
+.equ DDRAM_LINE_1   = 0x00       ; DDRAM Line 1, Column 0
+.equ DDRAM_LINE_2   = 0x20       ; DDRAM Line 1, Column 0
+.equ DDRAM_LINE_3   = 0x40       ; DDRAM Line 1, Column 0
+.equ DDRAM_LINE_4   = 0x60       ; DDRAM Line 1, Column 0
 
 
 #endif
