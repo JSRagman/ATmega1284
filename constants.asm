@@ -19,6 +19,14 @@
 .def  rTimer  = r5                ; Used with Timer/Counter 0
 
 
+; Register Usage:
+; -----------------------------------------------------------------------------
+; X
+;
+; Y - Data Stack (exclusive)
+;
+; Z
+
 
 ; Port Assignments:
 ; -----------------------------------------------------------------------------
@@ -59,7 +67,7 @@
 .equ SCLR   = PD7                 ; Pull low to reset latched button inputs
 
 
-.equ HSTACK_MAXSIZE = 128     ; Used to initialize the data stack.
+.equ HSTACK_MAXSIZE = 128         ; Used to initialize the data stack.
 
 
 ; External Interrupt Sense Constants
@@ -134,14 +142,16 @@
 .equ CTRLBYTE_DATA  = 0x40  ; D/C# = 1, Control Byte - the next byte is data.
 .equ CTRLBYTE_MASK  = 0b_1011_1111
 
+.equ CTRL_CMD_C0    = 0x80  ; 0b_1000_0000
+.equ CTRL_DAT_C0    = 0xC0  ; 0b_1100_0000
+
 ; Commands
+.equ SET_DDRAM     = 0x80
+
 .equ DISPLAY_CLEAR = 0x01
 .equ DISPLAY_HOME  = 0x02
 .equ DISPLAY_OFF   = 0x08
 .equ DISPLAY_ON    = 0x0C
-
-.equ SET_DDRAM     = 0x80
-
 
 ; Cursor State Constants
 .equ CURSOR_OFF    = 0

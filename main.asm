@@ -25,6 +25,14 @@
 ; ---------------------
 .include "esegdata.asm"
 
+
+; dseg data
+; ---------------------
+.include "dsegdata.asm"
+
+
+
+
 .cseg
 
 ; Interrupt Table
@@ -107,15 +115,13 @@ reset:
     init_tc0                              ; Init Timer/Counter 0
     init_twi                              ; Init TWI module
 
-;   Set the Display TWI Address
-    ldi    r16,    DISPLAY_ADDR             ; Place display TWI address in GPIOR0
-    out    GPIOR0, r16
 
     sei                                     ; Light the fuse
 
 ;   Initialize the display
-    rcall display_start
+    rcall display_startup
     brts  error_reset                       ; if (error)  goto error
+
     m_indicator_set  PLEDGRN                ; Illuminate Green button (woohoo!)
     rjmp mainloop
 
@@ -138,7 +144,7 @@ mainloop:
 .include "mainfunctions.asm"
 
 
-; greenbutton_push                                                    13Jul2019
+; greenbutton_push                                                    15Jul2019
 ; -----------------------------------------------------------------------------
 ; Description:
 ;     
@@ -163,7 +169,7 @@ greenbutton_exit:
 
 
 
-; yellowbutton_push                                                   14Jul2019
+; yellowbutton_push                                                   15Jul2019
 ; -----------------------------------------------------------------------------
 ; Description:
 ;     
@@ -186,7 +192,7 @@ exit_yellowbutton:
 
 
 
-; redbutton_push                                                      14Jul2019
+; redbutton_push                                                      15Jul2019
 ; -----------------------------------------------------------------------------
 ; Description:
 ;     

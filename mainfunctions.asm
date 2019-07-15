@@ -2,7 +2,7 @@
 ; mainfunctions.asm
 ;
 ; Created: 14Jul2019
-; Updated: 14Jul2019
+; Updated: 15Jul2019
 ;  Author: JSRagman
 ;
 ;
@@ -11,7 +11,7 @@
 
 
 
- ; delay                                                               12Jul2019
+; delay                                                               12Jul2019
 ; -----------------------------------------------------------------------------
 ; Description:
 ;     Returns after a specified number of milliseconds has elapsed.
@@ -41,34 +41,29 @@ delay_exit:
 
 
 
-; display_start                                                       14Jul2019
+
+; display_startup                                                     15Jul2019
 ; -----------------------------------------------------------------------------
 ; Description:
 ;     Resets the display and shows a startup message.
 ; Returns:
 ;     SREG - The T flag indicates whether the operation was successful
 ;            (cleared) or if an error was encountered (set)
-display_start:
-    ldi    r25,    high(display_init)       ; Point to display initialization data.
-    ldi    r24,     low(display_init)
-    rcall  US2066_Reset                     ; Call the display reset function.
-    brts   exit_displaystart
-
-    pushdi  DISPLAY_CLEAR                   ; Clear the display
-    rcall   US2066_SendCommand
-    brts    exit_displaystart
+display_startup:
+    rcall  US2066_Reset                     ; Reset and initialize
+    brts   exit_displaystartup              ; if (error) goto exit
 
     pushdi CURSOR_OFF                       ; Cursor off
     pushdi DISPLAY_ON                       ; Display on
     rcall  US2066_SetState
-    brts   exit_displaystart
+    brts   exit_displaystartup
 
     pushdi MAXSENDBYTES                     ; Maximum number of data bytes
     ldi    r25, high(supmessage)            ; high byte of eeprom address
     ldi    r24,  low(supmessage)            ; low byte of eeprom address
     rcall  US2066_WriteFromEepString        ; Transmit
 
-exit_displaystart:
+exit_displaystartup:
 
     ret
 
