@@ -2,7 +2,7 @@
 ; nhd0420cwFuncs_twi.asm
 ;
 ; Created: 12Jul2019
-; Updated: 14Jul2019
+; Updated: 15Jul2019
 ; Author:  JSRagman
 ;
 ; Hardware:
@@ -16,9 +16,10 @@
 
 
 ; Function List:
-;     US2066_Reset                  Resets and initializes the display.
+;     US2066_Reset                Resets and initializes the display.
 ;     US2066_SendCommand          Sends a single-byte command to the display.
 ;     US2066_SendData             Sends one or more bytes of data to the display.
+;     US2066_SetPosition          Sets the display line and column positions.
 ;     US2066_SetState             Turns the display on or off and sets the cursor state.
 ;     US2066_WriteFromEepString   Transmits string data from EEPROM to the display.
 ;     US2066_WriteFromEepData     Reads data from EEPROM and transmits to the display.
@@ -79,7 +80,7 @@ US2066_Reset:
 ;     Sends a single-byte command to the display.
 ; Parameters:
 ;     SLA+W   - GPIOR0
-;               SLA+W for the targeted display.
+;               GPIOR0 is expected to hold the SLA+W for the targeted display.
 ;     Command - Data Stack
 ;               The top byte of the data stack is expected to be a command.
 ; General-Purpose Registers:
@@ -123,7 +124,7 @@ US2066_SendCommand:
 ;     Sends one or more bytes of data to the display.
 ; Parameters:
 ;     SLA+W      - GPIOR0
-;                  SLA+W for the targeted display.
+;                  GPIOR0 is expected to hold the SLA+W for the targeted display.
 ;     Byte Count - Data Stack
 ;                  The top byte of the data stack is expected to indicate the
 ;                  number of data bytes that follow.
@@ -171,6 +172,98 @@ US2066_SendData:
     ret
 
 
+; US2066_SetPosition                                                  15Jul2019
+; -----------------------------------------------------------------------------
+; Status:
+;     Tested  15Jul2019
+; Description:
+;     Sets the display line and column positions.
+; Parameters:
+;     SLA+W  - GPIOR0
+;              GPIOR0 is expected to hold the SLA+W for the targeted display.
+;     Line   - Data Stack
+;              The top byte on the data stack is expected to indicate
+;              the line number (1, 2, 3, or 4).
+;     Column - Data Stack
+;              The second byte on the data stack is expected to indicate
+;              the column number (1 to 20).
+; General-Purpose Registers:
+;     Preserved - r16, r17, r18, r19, r20, r21
+;     Changed   - 
+; Data Stack:
+;     Incoming     = 2 bytes
+;     Pop 1 byte   = line number
+;     Pop 1 byte   = column number
+;     Push 1 byte  = set_ddram command
+;     Push 1 byte  = control byte - command
+;     Push 1 byte  = byte count
+;     Push 1 byte  = SLA+W
+; Constants (Non-Standard):
+;     CTRLBYTE_CMD
+;     LINE_INCREMENT
+;     SET_DDRAM
+; Functions Called:
+;     TwiDw_FromDataStack
+; Macros Used:
+;     popd   - Pop from the data stack into a register
+;     pushd  - Push the contents of a register onto the data stack
+;     pushdi - Push an immediate value onto the data stack
+; Returns:
+;     Return values are passed unchanged from the TwiDw_FromDataStack function.
+;     SREG - The T flag indicates whether the TWI operation was successful
+;            (cleared) or if an error was encountered (set)
+; Notes:
+;     1. Command Byte - Set DDRAM Address
+;          Bit    7 = 1
+;          Bits 6:0 = DDRAM address value
+US2066_SetPosition:
+    push   r16
+    push   r17
+    push   r18
+    push   r19
+    push   r20
+    push   r21
+
+   .def    line    = r17                    ; Line number
+   .def    column  = r18                    ; Column number
+   .def    ddram   = r19                    ; Display position (DDRAM address)
+   .def    sla_w   = r20                    ; SLA+W parameter
+   .def    lineinc = r21                    ; DDRAM line increment value
+
+    in     sla_w,   GPIOR0                  ; retrieve SLA+W for the display
+    ldi    lineinc, LINE_INCREMENT          ; load ddram line increment value
+
+    popd   line                             ; Data Stack: pop line number
+    dec    line                             ; decrement linenumber
+    mul    line, lineinc                    ; ddram = linenumber * increment
+    mov    ddram, r0
+
+    popd   column                           ; Data Stack: pop column number
+    dec    column                           ; decrement column number
+    add    ddram, column                    ; ddram += column number
+    ori    ddram, SET_DDRAM                 ; Complete the Set DDRAM command
+
+    pushd  ddram                            ; Data Stack: push ddram command
+    pushdi CTRLBYTE_CMD                     ; Data Stack: push control byte
+    pushdi 2                                ; Data Stack: push bytecount
+    pushd  sla_w                            ; Data Stack: push SLA+W
+    rcall  TwiDw_FromDataStack              ; TWI transmit
+
+   .undef  lineinc
+   .undef  sla_w
+   .undef  ddram
+   .undef  column
+   .undef  line
+
+    pop    r21
+    pop    r20
+    pop    r19
+    pop    r18
+    pop    r17
+    pop    r16
+    ret
+
+
 ; US2066_SetState                                                     12Jul2019
 ; -----------------------------------------------------------------------------
 ; Status:
@@ -179,7 +272,7 @@ US2066_SendData:
 ;     Turns the display on or off and sets the cursor state.
 ; Parameters:
 ;     SLA+W  - GPIOR0
-;              SLA+W for the targeted display.
+;              GPIOR0 is expected to hold the SLA+W for the targeted display.
 ;     State  - Data Stack
 ;              The top byte on the data stack is expected to be a command
 ;              byte to turn the display on or off.
