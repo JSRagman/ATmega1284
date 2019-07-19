@@ -13,6 +13,6 @@ This is not really meant to be an installable software package, even though all 
 - The test circuit has been built
 - TWI functions have been tested
 - Display functions have been tested
-- Refinements are ongoing
 ## Comments
+- Struggling with assembly language style and organization. I'll let you know when I reach enlightenment.
 - Deep breath. Count to 8.
