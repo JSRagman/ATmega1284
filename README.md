@@ -11,9 +11,9 @@ Note: The word "tested" means that a function was built, run, and behaved as exp
 - AVR Assembler
 - AVR Dragon
 ## Status
-- TWI functions have been tested
-- Display functions have been tested
-- Re-organizing and applying polish. This will result in some significant improvements. Be patient.
+- Re-organizing and applying polish. Well, re-organizing is something of an understatement. TWI and Display functions have changed quite a lot. Be patient.
+- So. I became all wrapped around the axle with switch debouncing - there is more than one way of doing it. Who knew?
+- But. Back on track. A real-time clock has been added - writing the code for it now.
 ## Pending
 Schematic and board layout - this is still in flux.
 ## Comments
