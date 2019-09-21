@@ -23,9 +23,9 @@
 ;     2.  constants.asm
 ;     3.  mainfuncs.asm
 ;             main_Wait           (r21)
-;     3.  twifuncs_read.asm
+;     4.  twifuncs_read.asm
 ;             TwiDr_ToSram        (r17, r20, r21, X)
-;     4.  twifuncs_write.asm
+;     5.  twifuncs_write.asm
 ;             TwiDw_ToReg         (r20, r21, r22)
 ;             TwiDw_ToRegFromSram (r17, r20, r21, X)
 ;
