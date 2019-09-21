@@ -8,23 +8,33 @@
 ;
 ; Description:
 ;     TWI Data Read functions for the ATmega1284P.
-;
-; Depends On:
-;     1.  m1284pdef.inc
-;     2.  constants.asm
-;     3.  TwiFuncs_Basic.asm
-;     4.  DataStackMacros.asm
-;
-; Reference:
-;     1.  ATmega1284/1284P datasheet (Atmel-8272G-AVR-01/2015)
-;     2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
-;
+
+
 ; Function List:
 ;     TwiDr_Receive        Receives one byte from TWI
 ;     TwiDr_RegByte        Retrieves one byte from a device register
 ;     TwiDr_RegConnect     Establish connection to read from a device
 ;     TwiDr_ToSram         Receives data from a device and stores in SRAM.
 
+
+; Depends On:
+;     1.  m1284pdef.inc
+;     2.  constants.asm
+;     3.  datastackmacros.asm
+;             popd
+;             pushd
+;     4.  twifuncs_basic.asm
+;             Twi_Connect         (r20)
+;             Twi_Stop            ()
+;             Twi_Wait            ()
+;     5.  twifuncs_write.asm
+;             TwiDw_Send          (r21)
+
+
+; Reference:
+;     1.  ATmega1284/1284P datasheet (Atmel-8272G-AVR-01/2015)
+;     2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
+;
 
 
 ; TwiDr_Receive                                                        3Sep2019
@@ -127,7 +137,7 @@ TwiDr_Receive_exit:
 ; Functions Called:
 ;     TwiDr_Receive(SREG_C)
 ;     TwiDr_RegConnect(r20, r21)
-;     Twi_Stop
+;     Twi_Stop()
 ; Returns:
 ;     SREG_T      - pass (0) or fail (1)
 ;     Data Stack
