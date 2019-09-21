@@ -1,6 +1,8 @@
 # Device Functions
 ## Description
 Basic functions for interacting with TWI-connected devices.
+
+Note: All constant definitions are located in the main constants.asm file.
 ## File Contents
 ### MCP7940N.asm
 - RTC_GetTime
