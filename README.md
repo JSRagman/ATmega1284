@@ -19,4 +19,4 @@ Note: The word "tested" means that a function was built, run, and behaved as exp
 ## Pending
 Schematic and board layout - this is still in flux.
 ## Comments
-- I chose to place all constant definitions for TWI-connected devices in the main constant.asm file.
+- May the 40-DIP package never die!
