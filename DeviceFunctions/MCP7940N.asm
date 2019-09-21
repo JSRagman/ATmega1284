@@ -21,6 +21,13 @@
 ; Depends On:
 ;     1.  m1284pdef.inc
 ;     2.  constants.asm
+;     3.  mainfuncs.asm
+;             main_Wait           (r21)
+;     3.  twifuncs_read.asm
+;             TwiDr_ToSram        (r17, r20, r21, X)
+;     4.  twifuncs_write.asm
+;             TwiDw_ToReg         (r20, r21, r22)
+;             TwiDw_ToRegFromSram (r17, r20, r21, X)
 ;
 ; Reference:
 ;     1.  ATmega1284/1284P datasheet (Atmel-8272G-AVR-01/2015)
@@ -29,7 +36,7 @@
 
 
 
-; RTC_GetTime                                                         16Sep2019
+; RTC_GetTime                                                         21Sep2019
 ; -----------------------------------------------------------------------------
 ; Description:
 ;     Reads the Real-Time Clock (RTC) timekeeping registers into SRAM.
@@ -79,6 +86,7 @@ RTC_GetTime:
 ;     RTC_SEC       - RTC device register address
 ;     RTC_TIMEBYTES - Number of RTC registers to be read
 ; Functions Called:
+;     main_Wait(r21)
 ;     TwiDw_ToRegFromSram(r17, r20, r21, X)
 ; Returns:
 ;     SREG_T - pass (0) or fail (1)
@@ -92,7 +100,7 @@ RTC_SetTime:
     rcall  TwiDw_ToReg                      ; TwiDw_ToReg(r20, r21, r22)
 
     ldi    r21,  100                        ; delay time = 100 milliseconds
-    rcall  main_Wait                        ; wait
+    rcall  main_Wait                        ; main_Wait(r21)
 
     ldi    r17,    RTC_TIMEBYTES            ; argument:  r17 = byte count
     ldi    r20,    RTC_ADDR                 ; argument:  r20 = SLA+W
