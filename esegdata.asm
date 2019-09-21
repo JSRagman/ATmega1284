@@ -2,22 +2,15 @@
 ; esegdata.asm
 ;
 ; Created: 13Jul2019
-; Updated: 13Jul2019
+; Updated: 13Aug2019
 ; Author:  JSRagman
 
 
 
 .eseg
 .org 0
-supmessage:
-.db CTRLBYTE_DATA
-.db "A Message", '\n'
-messagetwo:
-.db 15
-.db CTRLBYTE_DATA
-.db "Another Message"
-display_init:
-.db 60
+ee_us2066_initdata:                         ; Display initialization data
+.db 62
 .db 0x80, 0x2A
 .db 0x80, 0x71
 .db 0xC0, 0x00
@@ -48,4 +41,11 @@ display_init:
 .db 0x80, 0x28
 .db 0x80, 0x01
 .db 0x80, 0x80
-
+.db 0x80, 0x0C
+ee_sutext:                                  ; Startup display text
+;   "                    "                  ; 80 characters, 20 per line
+.db "Look at me! Zee!    "
+.db "I am te Angel ov    "
+.db "te Odd!             "
+.db "         - E.A. Poe "
+;   "                    "
