@@ -2,7 +2,7 @@
 ; NHD-0420CW_twi.asm
 ;
 ; Created: 12Jul2019
-; Updated: 14Aug2019
+; Updated: 21Sep2019
 ; Author:  JSRagman
 ;
 ; Hardware:
@@ -23,6 +23,22 @@
 ;     Display_WriteLine            Writes one line of text from SRAM to the display.
 
 
+; Depends On:
+;     1.  m1284pdef.inc
+;     2.  constants.asm
+;     3.  datastackmacros.asm
+;             pushd
+;             pushdi
+;     4.  twifuncs_write.asm
+;             TwiDw_FromDataStack (r17, r20, data stack)
+;             TwiDw_FromSram      (r17, r18, r20, X)
+
+; Reference:
+;     1.  ATmega1284/1284P datasheet (Atmel-8272G-AVR-01/2015)
+;     2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
+;     3.  Newhaven Display NHD-0420CW-AB3 Data Sheet, 4/6/2015
+;     4.  US2066 100 x 32 OLED/PLED Segment/Common Driver with Controller Data Sheet
+
 ; Notes:
 ;      1. SLA+W stands for "Slave Address plus Write bit".
 ;         These display functions all expect a SLA+W parameter, which is passed
@@ -36,50 +52,6 @@
 ;         replaced by a constant.
 ;         If a single display is the only device on the TWI bus, TWI functions
 ;         can be simplified likewise.
-
-
-
-; NHD-0420CW Display Constants:
-; -----------------------------------------------------------------------------
-; Description:
-;     Display-related constant values are presented here, commented out, as a
-;     convenient reference.
-;
-;     The actual definitions are located in the constants.asm file.
-
-
-;.equ DISPLAY_ADDR1 = 0x78         ; 0b_0111_1000
-;.equ DISPLAY_ADDR2 = 0x7A         ; 0b_0111_1010
-
-;; Control Bytes
-;.equ CTRL_CMD     = 0x00          ; Control Byte (Command)
-;.equ CTRL_CMD_CO  = 0x80          ; Control Byte (Command) + Continue
-;.equ CTRL_DAT     = 0x40          ; Control Byte (Data)
-;.equ CTRL_DAT_CO  = 0xC0          ; Control Byte (Data)    + Continue
-
-;; Commands
-;.equ DISPLAY_CLEAR = 0x01
-;.equ DISPLAY_HOME  = 0x02
-;.equ DISPLAY_OFF   = 0x08
-;.equ DISPLAY_ON    = 0x0C
-;.equ SET_DDRAM     = 0b_1000_0000
-
-;; Cursor State
-;.equ CURSOR_ON     = 0b_0000_0010
-;.equ CURSOR_BLINK  = 0b_0000_0011
-;.equ CURSOR_OFF    = 0
-
-;; Display Position Constants
-;.equ CHARCOUNT     = 80           ; Total number of display characters
-;.equ LINECOUNT     =  4           ; Number of display lines
-;.equ LINELENGTH    = 20           ; Length (characters) of one display line
-
-;.equ DDRAM_INCR = 0x20         ; DDRAM Increment from one line to the next
-;.equ LINE_1     = 0x00         ; DDRAM Line 1, Column 0
-;.equ LINE_2     = 0x20         ; DDRAM Line 2, Column 0
-;.equ LINE_3     = 0x40         ; DDRAM Line 3, Column 0
-;.equ LINE_4     = 0x60         ; DDRAM Line 4, Column 0
-
 
 
 
@@ -133,8 +105,6 @@ Display_Refresh_exit:
     ret
 
 
-
-
 ; Display_SendCommand                                                 13Aug2019
 ; -----------------------------------------------------------------------------
 ; Description:
@@ -169,7 +139,7 @@ Display_SendCommand:
     pushd  cmdbyt                           ; Data Stack: push the command byte
     pushdi CTRL_CMD                         ; Data Stack: push Control Byte (Command)
     ldi    bytcnt,   2                      ; argument: byte count = 2
-    rcall  TwiDw_FromDataStack              ; TwiDw_FromDataStack(count, data, SLA+W)
+    rcall  TwiDw_FromDataStack              ; TwiDw_FromDataStack(r17, r20, data stack)
 
    .undef  bytcnt
    .undef  cmdbyt
@@ -198,7 +168,7 @@ Display_SendCommand:
 ; Constants (Non-Standard):
 ;     CTRL_DAT     Control Byte (Data)
 ; Functions Called:
-;     TwiDw_FromSram(SLA+W, X, dscount, srcount)
+;     TwiDw_FromSram(r17, r18, r20, X)
 ; Macros Used:
 ;     pushdi - Pushes an immediate value onto the data stack
 ; Returns:
@@ -209,7 +179,7 @@ Display_SendData:
 
     pushdi CTRL_DAT                         ; Data Stack: push Control Byte (Data)
     ldi    r17,    1                        ; argument: data stack byte count
-    rcall  TwiDw_FromSram                   ; TwiDw_FromSram(SLA+W, X, dscount, srcount)
+    rcall  TwiDw_FromSram                   ; TwiDw_FromSram(r17, r18, r20, X)
 
     pop    r17
     pop    r16
