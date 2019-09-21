@@ -489,39 +489,3 @@ main_Wait_exit:                             ; wait over
    .undef  dtime
     pop    r16
     ret
-
-
-; main_TimeOut                                                        21Sep2019
-; -----------------------------------------------------------------------------
-; Description:
-;     Returns after a specified time delay.
-; Initial Conditions:
-;     - T/C0 is stopped.
-;     - T0 is driven by a 1 kHz external clock.
-;     - The global interrupt enable bit (SREG_I) must be set.
-;     - T/C0 Compare Match A interrupt is configured to increment the
-;       rTimer register each time it is called.
-; Parameters:
-;     r21 - delay time, in milliseconds (1 to 255)
-;     r22 - delay time multiplier
-; General-Purpose Registers:
-;     Named      - rTimer
-;     Parameters - r21, r22
-;     Modified   - rTimer
-main_TimeOut:
-
-   .def    dtime = r21                      ; parameter: delay time, milliseconds
-   .def    dmult = r22
-
-    out    TCNT0,    rZero                  ; TCNT0  = 0
-    clr    rTimer                           ; rTimer = 0
-    out    OCR0A,    dtime                  ; OCR0A  = dtime
-    ldi    r16,      TC0_CMPA               ; Enable output compare A interrupt
-    sts    TIMSK0,   r16
-    ldi    r16,      TC0CS_T0_F             ; Clock source = T0 (external)
-    out    TCCR0B,   r16                    ; Start T/C0
-main_Wait_loop:                             ; Wait
-    cp     rTimer, rZero                    ; if (rTimer == 0)
-    breq   main_Wait_loop                   ;     keep waiting
-
-    ret
