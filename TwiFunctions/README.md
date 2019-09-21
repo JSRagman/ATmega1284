@@ -2,15 +2,24 @@
 ## Description
 Non-Interrupt based TWI functions for the ATmega1284P MCU
 ## Status
-Tested 14Jul2019
+Updated 21Sep2019 - Tested... mostly
 ## File Contents
-### TwiConstants.asm
-Constant definitions for the TWI functions
-### TwiFuncs_Basic.asm
-- TwiConnect
+### twifuncs_basic.asm
+- Twi_Connect
+- Twi_Send
+- Twi_Slarw
+- Twi_Start
 - TwiStop
 - TwiWait
-### TwiFuncs_Write.asm
+### twifuncs_write.asm
 - TwiDw_FromDataStack
 - TwiDw_FromEepData
-- TwiDw_FromEepString
+- TwiDw_FromSram
+- TwiDw_Send
+- TwiDw_ToRegFromSram
+- TwiDw_ToReg
+### twifuncs_read.asm
+- TwiDr_Receive
+- TwiDr_RegByte
+- TwiDr_RegConnect
+- TwiDr_ToSram
