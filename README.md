@@ -19,6 +19,4 @@ Note: The word "tested" means that a function was built, run, and behaved as exp
 ## Pending
 Schematic and board layout - this is still in flux.
 ## Comments
-- Struggling with assembly language style and organization. I'll let you know when I reach enlightenment.
-- There are no namespaces here. Every constant definition is global. Every function name, every address label, is global. This requires a serious coping mechanism.
-- Deep breath. Count to 8.
+- I chose to place all constant definitions for TWI-connected devices in the main constant.asm file.
