@@ -4,11 +4,22 @@ Macros that I have found to be useful
 ## Status
 Tested 14Jul2019
 ## Remarks
-I've dropped the m_ prefix from most of my macros. Next month expect me to decide that maybe they should have that prefix after all.
+Initialization macros make the startup code easier to follow.
 ## File Contents
-### DataStackMacros.asm
+### datastackmacros.asm
 - peekd
 - peekdd
 - popd
 - pushd
 - pushdi
+### dataxfermacros.asm
+- ldli
+- inn
+- outi
+- outr
+### initmacros.asm
+- init_extinterrupts
+- init_ports
+- init_stacks
+- init_tc0
+- init_twi
