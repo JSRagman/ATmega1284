@@ -3,33 +3,56 @@
 ;
 ; main.asm
 ; Created: 29Jun2019
-; Updated: 14Jul2019
-; Author : JSRagman
+; Updated: 21Sep2019
+;  Author: JSRagman
 ;
 ;
 ; Hardware Configuration:
-;     MCU:      ATmega1284P
-;     Display:  NHD-0420CW
+;     MCU:      ATmega1284P 8-bit Microcontroller with 128K Flash, 16K SRAM, 4K EEPROM
+;     RTC:      MCP7940N Battery-Backed I2C Real-Time Clock/Calendar
+;     Display:  NHD-0420CW Character OLED Display Module
 ;
-;     1 kHz external clock on T0
+; MCU Connections
+;     T0 - 1 kHz clock
+;          LTC6992 Voltage-Controlled PWM Clock
 ;
+;     Mechanical Rotary Encoder/Decoder
+;          STEP and DIR inputs on PB2(INT2) and PB3.
+;          !QRESET output on PB4.
+;
+;     Illuminated Pushbutton Switches
+;          Switch contact inputs on PA2,3,4,5,6
+;          Switch LED outputs on PC2,3,4,5,6
+;          Switch Clear output (!SCLR) on PD7
+;
+;     Display
+;         Display !RESET on PC7
+;
+;     I2C Bus
+;         Display
+;         Real-Time Clock
+;         ADC
 
-.include "constants.asm"
-.include "./Macros/DataStackMacros.asm"
-.include "./Macros/macros.asm"
+
+
+
+
+; Include File Precedence:
+;     1. registers.asm
+;     2. constants.asm
+;     3. ports.asm
+;     4. macros.asm
+
+
+.include "./MainDefinitions/registers.asm"
+.include "./MainDefinitions/constants.asm"
+.include "./MainDefinitions/ports.asm"
+.include "./Macros/datastackmacros.asm"
 .include "./Macros/initmacros.asm"
 
-.equ DISPLAY_ADDR = 0x7A
 
-; eseg data
-; ---------------------
-.include "esegdata.asm"
-
-
-; dseg data
-; ---------------------
-.include "dsegdata.asm"
-
+.include "./DataDefinitions/esegdata.asm"
+.include "./DataDefinitions/dsegdata.asm"
 
 
 
@@ -41,9 +64,11 @@
     rjmp reset
 .org    INT0addr    ; 0x0002  External Interrupt 0
 .org    INT1addr    ; 0x0004  External Interrupt 1
+    rjmp irq_rtc
 .org    INT2addr    ; 0x0006  External Interrupt 2
+    rjmp irq_rotary
 .org    PCI0addr    ; 0x0008  Pin Change Interrupt 0
-    rjmp pci0_handler
+    rjmp irq_pci0
 .org    PCI1addr    ; 0x000a  Pin Change Interrupt 1
 .org    PCI2addr    ; 0x000c  Pin Change Interrupt 2
 .org    PCI3addr    ; 0x000e  Pin Change Interrupt 3
@@ -56,7 +81,7 @@
 .org    OC1Baddr    ; 0x001c  Timer/Counter1 Compare Match B
 .org    OVF1addr    ; 0x001e  Timer/Counter1 Overflow
 .org    OC0Aaddr    ; 0x0020  Timer/Counter0 Compare Match A
-    rjmp oc0a_handler
+    rjmp irq_oc0a
 .org    OC0Baddr    ; 0x0022  Timer/Counter0 Compare Match B
 .org    OVF0addr    ; 0x0024  Timer/Counter0 Overflow
 .org    SPIaddr     ; 0x0026  SPI Serial Transfer Complete
@@ -78,12 +103,11 @@
 
 
 ; irq_fallout
-; -----------
+; -----------------------------------------------------------------------------
 ; Description:
-;     You shouldn't be here. Set an error signal and
-;     wait for rescue.
+;     You shouldn't be here. Set an error signal and wait for rescue.
 irq_fallout:
-;   TODO: Set an error signal.
+;   TODO: Cry for help.
 
 irq_fallout_loop:
     rjmp irq_fallout_loop
@@ -93,7 +117,7 @@ irq_fallout_loop:
 
 ; Interrupt Handlers
 ; -----------------------------------------------------------------------------
-.include "interrupts.asm"
+.include "irqhandlers.asm"
 
 
 
@@ -101,32 +125,57 @@ irq_fallout_loop:
 
 
 
-; reset
+; reset                                                               21Sep2019
 ; -----------------------------------------------------------------------------
 reset:
-;   Register Constants
-    clr    rZero                            ; rZero = 0
-    ldi    r16,    0xFF                     ; rFF   = 0xFF
-    mov    rFF,    r16
+;   Initialize Named Registers
+    clr    rZero
+    clr    rTimer
 
-    init_stacks                           ; Init hardware and data stacks
-    init_ports                            ; Init Ports
-    init_pcinterrupts                     ; Init Pin-Change Interrupts
-    init_tc0                              ; Init Timer/Counter 0
-    init_twi                              ; Init TWI module
+    out    GPIOR0, rZero                    ; clear GPIOR0, which will be used
+                                            ; as a status register
 
+;   Initialization Macros
+    init_stacks                             ; Init hardware and data stacks
+    init_ports                              ; Init Ports
+    init_tc0                                ; Init Timer/Counter 0
+    init_twi                                ; Init TWI module
 
     sei                                     ; Light the fuse
 
-;   Initialize the display
-    rcall display_startup
-    brts  error_reset                       ; if (error)  goto error
+;   Reset all pushbutton switches
+    sbi    DDRD,  BSWCLR                    ; !SCLR = 0
+    ldi    r21,  100                        ; delay time = 100 milliseconds
+    rcall  main_Wait                        ; wait
+    cbi    DDRD,  BSWCLR                    ; !SCLR = 1
 
-    m_indicator_set  PLEDGRN                ; Illuminate Green button (woohoo!)
-    rjmp mainloop
+    init_extinterrupts                      ; Init External Interrupts
 
-error_reset:                                ; Error Condition
-    m_indicator_set    PLEDRED              ; Illuminate Red button (crap!)
+;   Initialize both displays
+    rcall  main_ResetDisplays
+    brts   reset_error                      ; if (SREG_T == 1)  goto error
+
+;   Show startup text on display 1.
+    rcall  main_LoadStartupText             ; Load startup text into SRAM
+    ldi    r20,  DISPLAY_ADDR1              ; argument: r20 = Display 1 SLA+W
+    rcall  Display_Refresh
+    brts   reset_error                      ; if (SREG_T == 1)  goto error
+
+;   Show time and date on display 2
+    rcall  main_ShowTime
+
+
+reset_success:
+    clc                                     ; argument: SREG_C = 0
+    ldi    r17, (1<<PLED4)                  ; argument: PLED4 = on
+    rcall  main_SetLeds                     ; Illuminate Green button (woohoo!)
+    rjmp   mainloop
+
+reset_error:                                ; Error Condition
+    sec                                     ; argument: SREG_C = 1
+    ldi    r17, (1<<PLED5)                  ; argument: PLED5 = on
+    rcall  main_SetLeds                     ; Illuminate Red button (crap!)
+
 
 mainloop:
     rjmp mainloop
@@ -138,82 +187,12 @@ mainloop:
 ; Functions
 ; -----------------------------------------------------------------------------
 
-.include "./TWIFunctions/TwiFuncs_Basic.asm"
-.include "./TWIFunctions/TwiFuncs_Write.asm"
-.include "./DisplayFunctions/nhd0420cwFuncs_twi.asm"
-.include "mainfunctions.asm"
-
-
-; greenbutton_push                                                    15Jul2019
-; -----------------------------------------------------------------------------
-; Description:
-;     
-greenbutton_push:
-    pushdi  DISPLAY_CLEAR                   ; Clear the display
-    rcall   US2066_SendCommand
-
-    pushdi CURSOR_OFF                       ; Cursor off
-    pushdi DISPLAY_ON                       ; Display on
-    rcall  US2066_SetState
-
-    pushdi MAXSENDBYTES                     ; Maximum number of data bytes
-    ldi    r25, high(supmessage)            ; high byte of eeprom address
-    ldi    r24,  low(supmessage)            ; low byte of eeprom address
-    rcall  US2066_WriteFromEepString        ; Transmit
-
-greenbutton_err:
-
-greenbutton_exit:
-
-    ret
-
-
-
-; yellowbutton_push                                                   15Jul2019
-; -----------------------------------------------------------------------------
-; Description:
-;     
-yellowbutton_push:
-    pushdi 5            ; Column number
-    pushdi 2            ; Line number
-    rcall  US2066_SetPosition
-
-    pushdi MAXSENDBYTES                     ; Maximum number of data bytes
-    ldi    r25, high(supmessage)            ; high byte of eeprom address
-    ldi    r24,  low(supmessage)            ; low byte of eeprom address
-    rcall  US2066_WriteFromEepString        ; Transmit
-
-error_yellowbutton:
-
-
-exit_yellowbutton:
-
-    ret
-
-
-
-; redbutton_push                                                      15Jul2019
-; -----------------------------------------------------------------------------
-; Description:
-;     
-redbutton_push:
-    pushdi 10            ; Column number
-    pushdi 3             ; Line number
-    rcall  US2066_SetPosition
-
-    pushdi MAXSENDBYTES                     ; Maximum number of data bytes
-    ldi    r25, high(supmessage)            ; high byte of eeprom address
-    ldi    r24,  low(supmessage)            ; low byte of eeprom address
-    rcall  US2066_WriteFromEepString        ; Transmit
-
-
-
-error_redbutton:
-
-
-exit_redbutton:
-
-    ret
-
+.include "./TWIFunctions/twifuncs_basic.asm"
+.include "./TWIFunctions/twifuncs_write.asm"
+.include "./TWIFunctions/twifuncs_read.asm"
+.include "./DeviceFunctions/NHD-0420CW_twi.asm"
+.include "./DeviceFunctions/MCP7940N.asm"
+.include "mainfuncs.asm"
+.include "buttonfuncs.asm"
 
 
