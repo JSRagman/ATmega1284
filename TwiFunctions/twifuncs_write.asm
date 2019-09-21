@@ -9,16 +9,6 @@
 ; Description:
 ;     TWI Data Write functions for the ATmega1284P.
 ;
-; Depends On:
-;     1.  m1284pdef.inc
-;     2.  constants.asm
-;     3.  twifuncs_basic.asm
-;     4.  datastackmacros.asm
-;
-; Reference:
-;     1.  ATmega1284/1284P datasheet (Atmel-8272G-AVR-01/2015)
-;     2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
-;
 ; Function List:
 ;     TwiDw_FromDataStack        Transmits from the data stack to a designated TWI device.
 ;     TwiDw_FromEepData          Transmits a block of data from EEPROM to a designated TWI device.
@@ -27,7 +17,21 @@
 ;     TwiDw_ToRegFromSram        Transmits one or more bytes of data from SRAM to a TWI device,
 ;                                starting at a specified (device) register address.
 ;     TwiDw_ToReg                Transmits one byte of data to a targeted device register.
-;
+
+; Depends On:
+;     1.  m1284pdef.inc
+;     2.  constants.asm
+;     3.  datastackmacros.asm
+;             popd
+;     4.  twifuncs_basic.asm
+;             Twi_Connect         (r20)
+;             Twi_Stop            ()
+;             Twi_Wait            ()
+
+; Reference:
+;     1.  ATmega1284/1284P datasheet (Atmel-8272G-AVR-01/2015)
+;     2.  Atmel AVR 8-bit Instruction Set Manual, Rev. 0856K-AVR-05/2016
+
 ; Data Stack:
 ;     Data stack functionality is implemented using macros found in DataStackMacros.asm.
 ;     Keep in mind that use of the data stack affects the Y register.
