@@ -3,27 +3,27 @@
 ;
 ; main.asm
 ; Created: 29Jun2019
-; Updated: 21Sep2019
+; Updated: 19Oct2019
 ;  Author: JSRagman
 ;
 ;
 ; Hardware Configuration:
 ;     MCU:      ATmega1284P 8-bit Microcontroller with 128K Flash, 16K SRAM, 4K EEPROM
 ;     RTC:      MCP7940N Battery-Backed I2C Real-Time Clock/Calendar
-;     Display:  NHD-0420CW Character OLED Display Module
+;     Display:  Two NHD-0420CW Character OLED Display Modules.
+;               Note: The final design will have only one display. I'm using two now
+;                     because it's convenient for testing.
 ;
 ; MCU Connections
 ;     T0 - 1 kHz clock
 ;          LTC6992 Voltage-Controlled PWM Clock
 ;
 ;     Mechanical Rotary Encoder/Decoder
-;          STEP and DIR inputs on PB2(INT2) and PB3.
-;          !QRESET output on PB4.
+;          STEP and DIRection inputs on PA0 and PA1.
 ;
-;     Illuminated Pushbutton Switches
+;     Five Illuminated Pushbutton Switches
 ;          Switch contact inputs on PA2,3,4,5,6
-;          Switch LED outputs on PC2,3,4,5,6
-;          Switch Clear output (!SCLR) on PD7
+;          Illuminated switch LED outputs on PC2,3,4,5,6
 ;
 ;     Display
 ;         Display !RESET on PC7
@@ -31,7 +31,6 @@
 ;     I2C Bus
 ;         Display
 ;         Real-Time Clock
-;         ADC
 
 
 
@@ -66,7 +65,7 @@
 .org    INT1addr    ; 0x0004  External Interrupt 1
     rjmp irq_rtc
 .org    INT2addr    ; 0x0006  External Interrupt 2
-    rjmp irq_rotary
+    rjmp irq_button
 .org    PCI0addr    ; 0x0008  Pin Change Interrupt 0
     rjmp irq_pci0
 .org    PCI1addr    ; 0x000a  Pin Change Interrupt 1
@@ -125,31 +124,25 @@ irq_fallout_loop:
 
 
 
-; reset                                                               21Sep2019
+; reset                                                               19Oct2019
 ; -----------------------------------------------------------------------------
 reset:
 ;   Initialize Named Registers
     clr    rZero
     clr    rTimer
 
-    out    GPIOR0, rZero                    ; clear GPIOR0, which will be used
-                                            ; as a status register
+;   Initialize Status Register
+    out    GPIOR0, rZero                    ; clear GPIOR0
 
 ;   Initialization Macros
     init_stacks                             ; Init hardware and data stacks
     init_ports                              ; Init Ports
     init_tc0                                ; Init Timer/Counter 0
     init_twi                                ; Init TWI module
+    init_extinterrupts                      ; Init External Interrupts
 
     sei                                     ; Light the fuse
 
-;   Reset all pushbutton switches
-    sbi    DDRD,  BSWCLR                    ; !SCLR = 0
-    ldi    r21,  100                        ; delay time = 100 milliseconds
-    rcall  main_Wait                        ; wait
-    cbi    DDRD,  BSWCLR                    ; !SCLR = 1
-
-    init_extinterrupts                      ; Init External Interrupts
 
 ;   Initialize both displays
     rcall  main_ResetDisplays
@@ -162,18 +155,19 @@ reset:
     brts   reset_error                      ; if (SREG_T == 1)  goto error
 
 ;   Show time and date on display 2
+    ldi    r20,    DISPLAY_ADDR2            ; argument: r20 = SLA+W
     rcall  main_ShowTime
 
 
 reset_success:
     clc                                     ; argument: SREG_C = 0
-    ldi    r17, (1<<PLED4)                  ; argument: PLED4 = on
+    ldi    r17, (1<<PSLED4)                  ; argument: PSLED4 = on
     rcall  main_SetLeds                     ; Illuminate Green button (woohoo!)
     rjmp   mainloop
 
 reset_error:                                ; Error Condition
     sec                                     ; argument: SREG_C = 1
-    ldi    r17, (1<<PLED5)                  ; argument: PLED5 = on
+    ldi    r17, (1<<PSLED5)                  ; argument: PSLED5 = on
     rcall  main_SetLeds                     ; Illuminate Red button (crap!)
 
 
