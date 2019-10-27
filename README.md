@@ -14,8 +14,7 @@ Note: The word "tested" means that a function was built, run, and behaved as exp
 - AVR Assembler
 - AVR Dragon
 ## Status
-- Updated 21Sep2019
-- Allow me a few days to squash all the... features
+- Updated 27Oct2019
 ## Pending
 Schematic and board layout - this is still in flux.
 ## Comments
