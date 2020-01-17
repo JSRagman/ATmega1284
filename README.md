@@ -14,7 +14,7 @@ Note: The word "tested" means that a function was built, run, and behaved as exp
 - AVR Assembler
 - AVR Dragon
 ## Status
-- Updated 27Oct2019
+- Patiently waiting in line behind the ATxmega32E5 project
 ## Pending
 Schematic and board layout - this is still in flux.
 ## Comments
