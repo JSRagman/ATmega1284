@@ -1,7 +1,7 @@
 ## Purpose
 Basic functions for the Atmel ATmega1284, using assembly language.
 ## Status
-Patiently waiting in line behind the ATxmega32E5 project.
+Re-write in progress...
 ## Development Tools
 - Atmel Studio 7
 - AVR Assembler
